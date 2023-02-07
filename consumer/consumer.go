@@ -9,9 +9,9 @@ import (
 
 	"github.com/cactus/go-statsd-client/v5/statsd"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"source.golabs.io/engineering-platforms/ziggurat/kafka-consumer-proxy-spike/internal/debug"
-	"source.golabs.io/engineering-platforms/ziggurat/kafka-consumer-proxy-spike/internal/toppar"
-	"source.golabs.io/engineering-platforms/ziggurat/kafka-consumer-proxy-spike/offman"
+	"github.com/shubhang93/relcon/internal/debug"
+	"github.com/shubhang93/relcon/internal/toppar"
+	"github.com/shubhang93/relcon/offman"
 )
 
 const pollTimeoutMS = 100
