@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/shubhang93/relcon/consumer"
 	"golang.org/x/net/context"
-	"source.golabs.io/engineering-platforms/ziggurat/kafka-consumer-proxy-spike/consumer"
 )
 
 func main() {

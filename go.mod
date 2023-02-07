@@ -1,4 +1,4 @@
-module source.golabs.io/engineering-platforms/ziggurat/kafka-consumer-proxy-spike
+module github.com/shubhang93/relcon
 
 go 1.19
 
