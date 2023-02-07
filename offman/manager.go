@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"source.golabs.io/engineering-platforms/ziggurat/kafka-consumer-proxy-spike/internal/toppar"
+	"github.com/shubhang93/relcon/internal/toppar"
 )
 
 const defaultTrackerSize = 256
