@@ -1,0 +1,53 @@
+// offset reset error
+%4|1651839165.844|OFFSET|rdkafka#consumer-1| [thrd:main]: driver-location-ping-3 [19]: offset reset (at offset 1514131) to BEGINNING: fetch failed due to requested offset not available on the broker: Broker: Offset out of range
+
+
+
+
+%7|1651842688.502|SRVPEND|rdkafka#consumer-1| [thrd:main]: Starting pending assigned partition plain-text-log [0] at offset INVALID
+%7|1651842688.502|ASSIGNDONE|rdkafka#consumer-1| [thrd:main]: Group "test_proxcon_0004": assignment operations done in join-state steady (rebalance rejoin=false)
+%7|1651842688.502|CGRPOP|rdkafka#consumer-1| [thrd:main]: Group "test_proxcon_0004" received op PARTITION_JOIN in state up (join-state steady) for plain-text-log [2]
+%7|1651842688.502|PARTADD|rdkafka#consumer-1| [thrd:main]: Group "test_proxcon_0004": add plain-text-log [2]
+%7|1651842688.502|CGRPOP|rdkafka#consumer-1| [thrd:main]: Group "test_proxcon_0004" received op PARTITION_JOIN in state up (join-state steady) for plain-text-log [1]
+%7|1651842688.502|PARTADD|rdkafka#consumer-1| [thrd:main]: Group "test_proxcon_0004": add plain-text-log [1]
+%7|1651842688.502|CGRPOP|rdkafka#consumer-1| [thrd:main]: Group "test_proxcon_0004" received op PARTITION_JOIN in state up (join-state steady) for plain-text-log [0]
+%7|1651842688.502|PARTADD|rdkafka#consumer-1| [thrd:main]: Group "test_proxcon_0004": add plain-text-log [0]
+%7|1651842688.607|FETCH|rdkafka#consumer-1| [thrd:main]: Partition plain-text-log [2] start fetching at offset 207
+%7|1651842688.609|FETCH|rdkafka#consumer-1| [thrd:main]: Partition plain-text-log [1] start fetching at offset 190
+%7|1651842688.610|FETCH|rdkafka#consumer-1| [thrd:main]: Partition plain-text-log [0] start fetching at offset 206
+%7|1651842691.512|HEARTBEAT|rdkafka#consumer-1| [thrd:main]: GroupCoordinator/1001: Heartbeat for group "test_proxcon_0004" generation id 6
+%7|1651842693.480|OFFSET|rdkafka#consumer-1| [thrd:main]: Topic plain-text-log [0]: stored offset -1001, committed offset -1001: not including in commit
+%7|1651842693.480|OFFSET|rdkafka#consumer-1| [thrd:main]: Topic plain-text-log [1]: stored offset -1001, committed offset -1001: not including in commit
+%7|1651842693.480|OFFSET|rdkafka#consumer-1| [thrd:main]: Topic plain-text-log [2]: stored offset -1001, committed offset -1001: not including in commit
+%7|1651842693.480|DUMP|rdkafka#consumer-1| [thrd:main]: Assignment dump (started_cnt=3, wait_stop_cnt=0)
+%7|1651842693.480|DUMP_ALL|rdkafka#consumer-1| [thrd:main]: List with 3 partition(s):
+%7|1651842693.480|DUMP_ALL|rdkafka#consumer-1| [thrd:main]:  plain-text-log [0] offset STORED
+%7|1651842693.480|DUMP_ALL|rdkafka#consumer-1| [thrd:main]:  plain-text-log [1] offset STORED
+%7|1651842693.480|DUMP_ALL|rdkafka#consumer-1| [thrd:main]:  plain-text-log [2] offset STORED
+%7|1651842693.480|DUMP_PND|rdkafka#consumer-1| [thrd:main]: List with 0 partition(s):
+%7|1651842693.480|DUMP_QRY|rdkafka#consumer-1| [thrd:main]: List with 0 partition(s):
+%7|1651842693.480|DUMP_REM|rdkafka#consumer-1| [thrd:main]: List with 0 partition(s):
+%7|1651842693.480|ASSIGNDONE|rdkafka#consumer-1| [thrd:main]: Group "test_proxcon_0004": assignment operations done in join-state steady (rebalance rejoin=false)
+%7|1651842694.527|HEARTBEAT|rdkafka#consumer-1| [thrd:main]: GroupCoordinator/1001: Heartbeat for group "test_proxcon_0004" generation id 6
+%7|1651842697.546|HEARTBEAT|rdkafka#consumer-1| [thrd:main]: GroupCoordinator/1001: Heartbeat for group "test_proxcon_0004" generation id 6
+%7|1651842698.480|OFFSET|rdkafka#consumer-1| [thrd:main]: Topic plain-text-log [0]: stored offset -1001, committed offset -1001: not including in commit
+%7|1651842698.480|OFFSET|rdkafka#consumer-1| [thrd:main]: Topic plain-text-log [1]: stored offset -1001, committed offset -1001: not including in commit
+%7|1651842698.480|OFFSET|rdkafka#consumer-1| [thrd:main]: Topic plain-text-log [2]: stored offset -1001, committed offset -1001: not including in commit
+%7|1651842698.480|DUMP|rdkafka#consumer-1| [thrd:main]: Assignment dump (started_cnt=3, wait_stop_cnt=0)
+%7|1651842698.480|DUMP_ALL|rdkafka#consumer-1| [thrd:main]: List with 3 partition(s):
+%7|1651842698.480|DUMP_ALL|rdkafka#consumer-1| [thrd:main]:  plain-text-log [0] offset STORED
+%7|1651842698.480|DUMP_ALL|rdkafka#consumer-1| [thrd:main]:  plain-text-log [1] offset STORED
+%7|1651842698.480|DUMP_ALL|rdkafka#consumer-1| [thrd:main]:  plain-text-log [2] offset STORED
+%7|1651842698.480|DUMP_PND|rdkafka#consumer-1| [thrd:main]: List with 0 partition(s):
+%7|1651842698.480|DUMP_QRY|rdkafka#consumer-1| [thrd:main]: List with 0 partition(s):
+%7|1651842698.480|DUMP_REM|rdkafka#consumer-1| [thrd:main]: List with 0 partition(s):
+
+
+Every 1.0s: ./kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group test_proxcon_0004                          Shubhang-Balkundi: Fri May  6 18:42:08 2022
+
+clients_lib_dir: /Users/shubhangbalkundi/kafka_2.12-2.4.0/bin/../clients/build/libs
+
+GROUP             TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID                                  HOST            CLIENT-ID
+test_proxcon_0004 plain-text-log  0          -               206             -               rdkafka-f535f4bb-8590-4cab-a548-a9a3a592c346 /172.18.0.1     rdkafka
+test_proxcon_0004 plain-text-log  1          -               190             -               rdkafka-f535f4bb-8590-4cab-a548-a9a3a592c346 /172.18.0.1     rdkafka
+test_proxcon_0004 plain-text-log  2          -               207             -               rdkafka-f535f4bb-8590-4cab-a548-a9a3a592c346 /172.18.0.1     rdkafka
