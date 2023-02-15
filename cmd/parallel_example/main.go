@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"math/rand"
 	"os/signal"
 	"syscall"
 	"time"
@@ -27,12 +26,13 @@ func main() {
 	}, messageIn)
 
 	workersDone := make(chan struct{})
+
+	// process each message concurrently with an upper limit of 10 goroutines
 	go func() {
 		defer close(workersDone)
 		RunWorkers(ctx, messageIn, func(m *kafka.Message) {
-			sleepTime := rand.Intn(10)
 			log.Printf("[Worker]: processing message %v\n", m.TopicPartition)
-			time.Sleep(time.Duration(sleepTime) * time.Millisecond)
+			time.Sleep(1000 * time.Millisecond)
 			if err := cons.Ack(m); err != nil {
 				log.Println("ACK error:", err)
 			}
