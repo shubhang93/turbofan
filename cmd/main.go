@@ -19,7 +19,7 @@ func main() {
 	messageIn := make(chan []*kafka.Message)
 
 	cons := consumer.New(consumer.Config{
-		BootstrapServers: []string{"g-gojek-id-mainstream.golabs.io:6668"},
+		BootstrapServers: []string{"localhost:9092"},
 		CommitIntervalMS: 5000,
 		ConsumerGroupID:  "relcon_001",
 		MessageBatchSize: 1000,
