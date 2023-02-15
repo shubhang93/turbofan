@@ -2,11 +2,11 @@ package consumer
 
 import (
 	"fmt"
+	"github.com/shubhang93/relcon/internal/toppar"
+	"github.com/shubhang93/relcon/offman"
 	"log"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"source.golabs.io/engineering-platforms/ziggurat/kafka-consumer-proxy-spike/internal/toppar"
-	"source.golabs.io/engineering-platforms/ziggurat/kafka-consumer-proxy-spike/offman"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
 func makeRebalanceCB(man *offman.Manager) func(consumer *kafka.Consumer, event kafka.Event) error {

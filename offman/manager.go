@@ -3,7 +3,7 @@ package offman
 import (
 	"sync"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/shubhang93/relcon/internal/toppar"
 )
 
@@ -17,7 +17,7 @@ type TrackProgress struct {
 }
 
 type Manager struct {
-	tracks              map[toppar.TopPart]*OffsetTrack `json:"tracks"`
+	tracks              map[toppar.TopPart]*OffsetTrack
 	mu                  sync.Mutex
 	committableMessages map[toppar.TopPart]TrackProgress
 }

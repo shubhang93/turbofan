@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/shubhang93/relcon/internal/toppar"
 )
 

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/cactus/go-statsd-client/v5/statsd"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/shubhang93/relcon/internal/debug"
 	"github.com/shubhang93/relcon/internal/toppar"
 	"github.com/shubhang93/relcon/offman"
