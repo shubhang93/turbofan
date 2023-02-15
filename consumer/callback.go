@@ -1,7 +1,6 @@
 package consumer
 
 import (
-	"fmt"
 	"github.com/shubhang93/relcon/internal/toppar"
 	"github.com/shubhang93/relcon/offman"
 	"log"
@@ -16,7 +15,7 @@ func makeRebalanceCB(man *offman.Manager) func(consumer *kafka.Consumer, event k
 			log.Println("[re-balance CB]:", rbcEvent)
 			err := consumer.Resume(rbcEvent.Partitions)
 			if err != nil {
-				panic(fmt.Sprintf("error resuming parts:%v", err))
+				return err
 			}
 
 		case kafka.RevokedPartitions:
@@ -38,7 +37,7 @@ func makeRebalanceCB(man *offman.Manager) func(consumer *kafka.Consumer, event k
 
 			_, err := consumer.Commit()
 			if err != nil && err.(kafka.Error).Code() != kafka.ErrNoOffset {
-				panic(fmt.Sprintf("[part revoked]:error committing revoked offsets:%v", err))
+				return err
 			}
 
 			man.ClearPartitions(toppar.KafkaTopPartsToTopParts(rbcEvent.Partitions))

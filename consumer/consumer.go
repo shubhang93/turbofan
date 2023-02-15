@@ -2,12 +2,10 @@ package consumer
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
 	"time"
 
-	"github.com/cactus/go-statsd-client/v5/statsd"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/shubhang93/relcon/internal/debug"
 	"github.com/shubhang93/relcon/internal/toppar"
@@ -19,7 +17,6 @@ const pollTimeoutMS = 100
 type OffManConsumer struct {
 	kafCon           *kafka.Consumer
 	wg               sync.WaitGroup
-	statsClient      statsd.Statter
 	offMan           *offman.Manager
 	lastCommit       time.Time
 	sendChan         chan []*kafka.Message
@@ -30,12 +27,6 @@ type OffManConsumer struct {
 func New(conf Config, messageIn chan []*kafka.Message) *OffManConsumer {
 	config := conf.toConfigMap()
 	c, err := kafka.NewConsumer(&config)
-	if err != nil {
-		panic(err)
-	}
-	sc, err := statsd.NewClientWithConfig(&statsd.ClientConfig{
-		Address: "localhost:8125",
-		Prefix:  "relcon_consumer_alpha"})
 	if err != nil {
 		panic(err)
 	}
@@ -52,7 +43,6 @@ func New(conf Config, messageIn chan []*kafka.Message) *OffManConsumer {
 
 	return &OffManConsumer{
 		kafCon:           c,
-		statsClient:      sc,
 		offMan:           offman.New(),
 		lastCommit:       time.Now(),
 		sendChan:         messageIn,
@@ -112,7 +102,6 @@ func (omc *OffManConsumer) Consume(ctx context.Context, topics []string) error {
 	log.Printf("[Poll loop]: Starting consumer poll\n")
 	for run {
 		messages, err := omc.pollBatch(ctx, pollTimeoutMS)
-		_ = omc.statsClient.Inc("poll_batch_count", 1, 1.0)
 		if err != nil {
 			consumeErr = err
 			log.Printf("[consumer poll]:error received from poll:%v\n", err)
@@ -132,20 +121,27 @@ func (omc *OffManConsumer) Consume(ctx context.Context, topics []string) error {
 
 			debug.Log("[consumer poll]: pausing partitions:%v", partsToPause)
 			if err := omc.pauseParts(partsToPause); err != nil {
-				panic(fmt.Sprintf("error pausing parts:%v\n", err))
+				consumeErr = err
+				break
 			}
 
 			omc.handleRecords(ctx, messages)
 
 		}
-		omc.commitOffsets()
+
+		if err := omc.commitOffsets(); err != nil {
+			consumeErr = err
+			break
+		}
 	}
 
 	log.Printf("[consumer shutdown]: waiting for pending jobs to finish\n")
 	omc.wg.Wait()
 
 	log.Printf("[Consumer shutdown]:enqueueing remaining offsets to commit\n")
-	omc.commitOffsets()
+	if err := omc.commitOffsets(); err != nil {
+		log.Printf("[Consumer shutdown]:offset commit error:%v\n", err)
+	}
 
 	if err := omc.kafCon.Close(); err != nil {
 		log.Printf("[Consumer shutdown]:error closing consumer:%v\n", err)
@@ -155,27 +151,25 @@ func (omc *OffManConsumer) Consume(ctx context.Context, topics []string) error {
 	close(omc.sendChan)
 
 	log.Println("[Consumer shutdown]: Discarding future acknowledgements")
-	_ = omc.statsClient.Close()
 	log.Println("[Consumer shutdown]: shutdown complete")
 	return consumeErr
 }
 
-func (omc *OffManConsumer) commitOffsets() {
+func (omc *OffManConsumer) commitOffsets() error {
 
 	committableMessages := omc.offMan.CommittableMessages()
 
 	for _, committable := range committableMessages {
 		debug.Log("[committable]: {tp = %s off = %d}", committable.TopPart, committable.Message.TopicPartition.Offset)
 		_, err := omc.kafCon.StoreMessage(committable.Message)
-		_ = omc.statsClient.Gauge("ack_progress", committable.PercentageAcked, 1.0,
-			statsd.Tag{"partition", fmt.Sprintf("%d", committable.Partition)},
-			statsd.Tag{"topic", committable.Topic})
 		if err != nil {
-			panic(fmt.Sprintf("could not store message:%v\n", err))
+			return err
 		}
 	}
 
-	omc.commitIfIntervalExceeded()
+	if err := omc.commitIfIntervalExceeded(); err != nil {
+		return err
+	}
 
 	var finishedParts []kafka.TopicPartition
 	for part, track := range committableMessages {
@@ -184,23 +178,23 @@ func (omc *OffManConsumer) commitOffsets() {
 		}
 	}
 	omc.offMan.ClearPartitions(toppar.KafkaTopPartsToTopParts(finishedParts))
-	omc.resumeParts(finishedParts)
+	if err := omc.resumeParts(finishedParts); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (omc *OffManConsumer) commitIfIntervalExceeded() {
+func (omc *OffManConsumer) commitIfIntervalExceeded() error {
 	now := time.Now()
 	timeDiff := now.Sub(omc.lastCommit).Milliseconds()
 
 	if timeDiff >= int64(omc.commitIntervalMS) {
 		log.Printf("[consumer Commit]: exceeded %dms by %dms, committing offsets\n", omc.commitIntervalMS, timeDiff-int64(omc.commitIntervalMS))
 
-		commitStart := time.Now()
 		committed, err := omc.kafCon.Commit()
-		commitEnd := time.Now()
-		_ = omc.statsClient.Gauge("commit_time", commitEnd.Sub(commitStart).Milliseconds(), 1.0)
 
 		if err != nil && err.(kafka.Error).Code() != kafka.ErrNoOffset {
-			panic(fmt.Sprintf("error committing %v partitions:%v", committed, err))
+			return err
 		}
 
 		for _, topicPartition := range committed {
@@ -214,6 +208,7 @@ func (omc *OffManConsumer) commitIfIntervalExceeded() {
 
 		omc.lastCommit = time.Now()
 	}
+	return nil
 }
 
 func (omc *OffManConsumer) pauseParts(parts []kafka.TopicPartition) error {
@@ -223,22 +218,21 @@ func (omc *OffManConsumer) pauseParts(parts []kafka.TopicPartition) error {
 	return nil
 }
 
-func (omc *OffManConsumer) resumeParts(parts []kafka.TopicPartition) {
+func (omc *OffManConsumer) resumeParts(parts []kafka.TopicPartition) error {
 	if len(parts) < 1 {
-		return
+		return nil
 	}
 
 	log.Printf("[%s]resuming parts for %v\n", omc.kafCon.String(), parts)
 	if err := omc.kafCon.Resume(parts); err != nil {
-		panic(fmt.Sprintf("[%s] error resuming consumer:%v\n", omc.kafCon.String(), err))
+		return err
 	}
+	return nil
 }
 
 func (omc *OffManConsumer) Ack(m *kafka.Message) error {
 	ktp := m.TopicPartition
 	tp := toppar.KafkaTopicPartToTopicPart(ktp)
-	tags := []statsd.Tag{{"topic", *ktp.Topic}, {"part", fmt.Sprintf("%d", ktp.Partition)}}
-	_ = omc.statsClient.Inc("ack_count", 1, 1.0, tags...)
 	return omc.offMan.Ack(tp, int64(ktp.Offset))
 }
 
