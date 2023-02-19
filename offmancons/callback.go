@@ -1,4 +1,4 @@
-package consumer
+package offmancons
 
 import (
 	"github.com/shubhang93/relcon/internal/offman"

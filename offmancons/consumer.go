@@ -1,4 +1,4 @@
-package consumer
+package offmancons
 
 import (
 	"context"

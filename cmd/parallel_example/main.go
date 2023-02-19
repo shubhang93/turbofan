@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/shubhang93/relcon/consumer"
+	"github.com/shubhang93/relcon/offmancons"
 	"golang.org/x/net/context"
 )
 
@@ -17,7 +17,7 @@ func main() {
 	defer cancel()
 	messageIn := make(chan []*kafka.Message)
 
-	cons := consumer.New(consumer.Config{
+	cons := offmancons.New(offmancons.Config{
 		BootstrapServers: []string{"localhost:9092"},
 		CommitIntervalMS: 5000,
 		ConsumerGroupID:  "relcon_001",
