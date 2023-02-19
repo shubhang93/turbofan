@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"github.com/shubhang93/relcon/internal/offman"
 	"log"
 	"sync"
 	"time"
@@ -9,13 +10,10 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/shubhang93/relcon/internal/debug"
 	"github.com/shubhang93/relcon/internal/toppar"
-	"github.com/shubhang93/relcon/offman"
 )
 
-const pollTimeoutMS = 100
-
 type OffManConsumer struct {
-	kafCon           *kafka.Consumer
+	kafCon           KafkaConsumer
 	wg               sync.WaitGroup
 	offMan           *offman.Manager
 	lastCommit       time.Time
@@ -23,6 +21,8 @@ type OffManConsumer struct {
 	batchSize        int
 	commitIntervalMS time.Duration
 }
+
+const pollTimeoutMS = 100
 
 func New(conf Config, messageIn chan []*kafka.Message) *OffManConsumer {
 	config := conf.toConfigMap()
@@ -51,10 +51,10 @@ func New(conf Config, messageIn chan []*kafka.Message) *OffManConsumer {
 	}
 }
 
-func (omc *OffManConsumer) pollBatch(ctx context.Context, timeoutInMs int) ([]*kafka.Message, error) {
+func (omc *OffManConsumer) pollBatch(ctx context.Context, timeoutMS int) ([]*kafka.Message, error) {
 	messages := make([]*kafka.Message, 0, omc.batchSize)
-	remainingTime := time.Duration(timeoutInMs) * time.Millisecond
-	endTime := time.Now().Add(time.Duration(timeoutInMs) * time.Millisecond)
+	remainingTime := time.Duration(timeoutMS) * time.Millisecond
+	endTime := time.Now().Add(time.Duration(timeoutMS) * time.Millisecond)
 
 	done := ctx.Done()
 	for len(messages) < omc.batchSize {
@@ -63,7 +63,7 @@ func (omc *OffManConsumer) pollBatch(ctx context.Context, timeoutInMs int) ([]*k
 			log.Printf("[consumer shutdown]: starting shutdown, received context done")
 			return messages, ctx.Err()
 		default:
-			e := omc.kafCon.Poll(timeoutInMs)
+			e := omc.kafCon.Poll(timeoutMS)
 			switch event := e.(type) {
 			case kafka.Error:
 				if event.IsFatal() {
@@ -76,10 +76,9 @@ func (omc *OffManConsumer) pollBatch(ctx context.Context, timeoutInMs int) ([]*k
 				// is committed whenever an offset reset happens [ only if auto.offset.reset = latest ]
 				_, err := omc.kafCon.StoreOffsets([]kafka.TopicPartition{kafka.TopicPartition(event)})
 				if err != nil {
-					log.Printf("[partition EOF handler]: could not store offset for %v\n", event)
+					log.Printf("[warn partition EOF handler]: could not store offset for %v\n", event)
 				}
 			}
-
 		}
 		remainingTime = endTime.Sub(time.Now())
 		if remainingTime < 0 {

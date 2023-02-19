@@ -57,7 +57,7 @@ func TestCommittableMessage(t *testing.T) {
 
 	err := track.UpdateStatus(6, StatusAck)
 	if err == nil {
-		t.Errorf("expected an error")
+		t.Errorf("expected an out of range offset error")
 	}
 	t.Logf("%v\n", err)
 

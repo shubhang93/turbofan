@@ -1,12 +1,15 @@
 package offman
 
 import (
-	"reflect"
-	"testing"
-
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/shubhang93/relcon/internal/toppar"
+	"reflect"
+	"testing"
 )
+
+func strPtr(s string) *string {
+	return &s
+}
 
 func TestLoadPartitions(t *testing.T) {
 	man := New()
@@ -69,5 +72,21 @@ func TestLoadPartitions(t *testing.T) {
 			t.Errorf("expected track:%v got track:%v\n", *expectedTrack, *gotTrack)
 		}
 	}
+}
 
+func TestManager_MarkCommitCheckpoint(t *testing.T) {
+	man := New()
+	parts := map[toppar.TopPart][]*kafka.Message{
+		toppar.TopPart{Partition: 0, Topic: "foo"}: {{TopicPartition: kafka.TopicPartition{
+			Topic:     strPtr("foo"),
+			Partition: 0,
+			Offset:    101,
+		}}},
+	}
+	man.LoadPartitions(parts)
+
+	if err := man.MarkCommitCheckpoint(toppar.TopPart{Topic: "foo", Partition: 0}, 102); err != nil {
+		t.Errorf("error marking commit checkpoint:%v\n", err)
+		return
+	}
 }

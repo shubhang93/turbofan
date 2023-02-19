@@ -1,8 +1,8 @@
 package consumer
 
 import (
+	"github.com/shubhang93/relcon/internal/offman"
 	"github.com/shubhang93/relcon/internal/toppar"
-	"github.com/shubhang93/relcon/offman"
 	"log"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"

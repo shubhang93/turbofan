@@ -6,7 +6,7 @@ import (
 )
 
 func Log(format string, args ...any) {
-	if _, ok := os.LookupEnv("DEBUG"); ok {
+	if _, ok := os.LookupEnv("OFFMAN_DEBUG"); ok {
 		log.Printf(format, args...)
 	}
 }

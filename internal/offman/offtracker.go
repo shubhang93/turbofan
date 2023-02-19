@@ -25,12 +25,13 @@ func NewTrack(messages []*kafka.Message) *OffsetTrack {
 
 	t := OffsetTrack{
 		messages: make(map[int64]*MessageContainer, len(messages)),
+		order:    make([]int64, len(messages)),
 		End:      int64(messages[len(messages)-1].TopicPartition.Offset),
 		Start:    int64(messages[0].TopicPartition.Offset),
 	}
-	for _, msg := range messages {
+	for i, msg := range messages {
 		offset := int64(msg.TopicPartition.Offset)
-		t.order = append(t.order, offset)
+		t.order[i] = offset
 		t.messages[offset] = &MessageContainer{Message: msg}
 	}
 
