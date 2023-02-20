@@ -33,6 +33,7 @@ func TestOffManConsumer_pollBatch(t *testing.T) {
 		MockConsumer func() *MockConsumer
 		Want         []*kafka.Message
 		WantError    bool
+		CtxFunc      func() (context.Context, context.CancelFunc)
 	}
 
 	tests := []pollTest{{
@@ -71,17 +72,72 @@ func TestOffManConsumer_pollBatch(t *testing.T) {
 			},
 			Want:      makeRecords(9),
 			WantError: false,
-		}}
+		},
+		{
+			Name: "Poll returns a fatal error and message events",
+			MockConsumer: func() *MockConsumer {
+				return &MockConsumer{
+					PollFunc: func() func(i int) kafka.Event {
+						counter := 0
+						return func(_ int) kafka.Event {
+							defer func() { counter++ }()
+							if counter == 2 {
+								return kafka.NewError(kafka.ErrIntr, "", true)
+							}
+							return &kafka.Message{}
+						}
+					}(),
+				}
+			},
+			Want:      makeRecords(0),
+			WantError: true,
+		},
+		{
+			Name: "Poll returns a max of batchSize number of messages",
+			MockConsumer: func() *MockConsumer {
+				return &MockConsumer{
+					PollFunc: func(i int) kafka.Event {
+						return &kafka.Message{}
+					},
+				}
+			},
+			Want:      makeRecords(100),
+			WantError: false,
+		},
+		{
+			Name: "Poll returns an error when context is cancelled",
+			MockConsumer: func() *MockConsumer {
+				return &MockConsumer{
+					PollFunc: func(i int) kafka.Event {
+						return &kafka.Message{}
+					},
+				}
+			},
+			WantError: true,
+			CtxFunc: func() (context.Context, context.CancelFunc) {
+				c, cancel := context.WithCancel(context.Background())
+				cancel()
+				return c, cancel
+			},
+		},
+	}
 
 	for _, testCase := range tests {
 
 		t.Run(testCase.Name, func(t *testing.T) {
+			mock := testCase.MockConsumer()
 			omc := OffManConsumer{
 				batchSize: 100,
-				kafCon:    testCase.MockConsumer(),
+				kafCon:    mock,
 			}
 
-			messages, err := omc.pollBatch(context.Background(), 100)
+			ctx, cancel := context.WithCancel(context.Background())
+			if testCase.CtxFunc != nil {
+				ctx, cancel = testCase.CtxFunc()
+			}
+			defer cancel()
+
+			messages, err := omc.pollBatch(ctx, 100)
 			if testCase.WantError && err == nil {
 				t.Errorf("expected error but got nil\n")
 				return
