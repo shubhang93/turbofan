@@ -50,7 +50,7 @@ func main() {
 		wg.Wait()
 	}()
 
-	if err := cons.Consume(ctx, []string{"driver-location-ping-3"}); err != nil {
+	if err := cons.Consume(ctx, []string{"topic1"}); err != nil {
 		log.Println("error starting consumer:", err)
 	}
 
