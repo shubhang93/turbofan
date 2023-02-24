@@ -3,6 +3,7 @@ package offmancons
 import (
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -146,7 +147,33 @@ func TestOffManConsumer_pollBatch(t *testing.T) {
 				t.Errorf("expected %d messages got %d messages\n", len(testCase.Want), len(messages))
 			}
 		})
-
 	}
+}
+
+func TestOffManConsumer_PartitionEOF(t *testing.T) {
+
+	expectedPartition := kafka.TopicPartition{
+		Topic:     toPtrStr("foo"),
+		Partition: 1,
+		Offset:    200,
+	}
+
+	mock := MockConsumer{
+		StoreOffsetsFunc: func(partitions []kafka.TopicPartition) ([]kafka.TopicPartition, error) {
+			gotPartition := partitions[0]
+			gotPartition.Offset = 200
+			if !reflect.DeepEqual(gotPartition, expectedPartition) {
+				t.Errorf("Expected %+v Got %+v\n", expectedPartition, gotPartition)
+			}
+			return []kafka.TopicPartition{}, nil
+		},
+		PollFunc: func(i int) kafka.Event {
+			time.Sleep(50 * time.Millisecond)
+			return kafka.PartitionEOF(expectedPartition)
+		},
+	}
+
+	omc := OffManConsumer{batchSize: 100, kafCon: mock}
+	_, _ = omc.pollBatch(context.Background(), 100)
 
 }
