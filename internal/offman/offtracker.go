@@ -39,7 +39,6 @@ func NewTrack(messages []*kafka.Message) *OffsetTrack {
 }
 
 func (t *OffsetTrack) UpdateStatus(offset int64, status AckStatus) error {
-
 	mc, ok := t.messages[offset]
 	start, end := t.order[0], t.order[len(t.order)-1]
 

@@ -19,7 +19,7 @@ type OffManConsumer struct {
 	lastCommit       time.Time
 	sendChan         chan []*kafka.Message
 	batchSize        int
-	commitIntervalMS time.Duration
+	commitIntervalMS int64
 }
 
 const pollTimeoutMS = 100
@@ -47,7 +47,7 @@ func New(conf Config, messageIn chan []*kafka.Message) *OffManConsumer {
 		lastCommit:       time.Now(),
 		sendChan:         messageIn,
 		batchSize:        batchSize,
-		commitIntervalMS: time.Duration(commitIntervalMS),
+		commitIntervalMS: int64(commitIntervalMS),
 	}
 }
 
@@ -184,10 +184,10 @@ func (omc *OffManConsumer) commitOffsets() error {
 }
 
 func (omc *OffManConsumer) commitIfIntervalExceeded() error {
+
 	now := time.Now()
 	timeDiff := now.Sub(omc.lastCommit).Milliseconds()
-
-	if timeDiff >= int64(omc.commitIntervalMS) {
+	if timeDiff >= omc.commitIntervalMS {
 		log.Printf("[consumer Commit]: exceeded %dms by %dms, committing offsets\n", omc.commitIntervalMS, timeDiff-int64(omc.commitIntervalMS))
 
 		committed, err := omc.kafCon.Commit()

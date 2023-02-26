@@ -2,7 +2,10 @@ package offmancons
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/shubhang93/relcon/internal/offman"
 	"reflect"
 	"testing"
 	"time"
@@ -18,6 +21,10 @@ var record = &kafka.Message{
 		Offset:    1,
 		Topic:     toPtrStr("foo"),
 	},
+}
+
+func makeTopicPartition(topic string, part int32, offset kafka.Offset) kafka.TopicPartition {
+	return kafka.TopicPartition{Topic: toPtrStr(topic), Partition: part, Offset: offset}
 }
 
 func makeRecords(count int) []*kafka.Message {
@@ -173,7 +180,105 @@ func TestOffManConsumer_PartitionEOF(t *testing.T) {
 		},
 	}
 
-	omc := OffManConsumer{batchSize: 100, kafCon: mock}
+	omc := OffManConsumer{batchSize: 100, kafCon: &mock}
 	_, _ = omc.pollBatch(context.Background(), 100)
 
+}
+
+func TestOffManConsumer_Consume_runLoop(t *testing.T) {
+	expectedTopicPartition := kafka.TopicPartition{
+		Topic:     toPtrStr("foo"),
+		Partition: 1,
+	}
+
+	gotCallCount := 0
+	expectedCallCount := 2
+
+	mock := MockConsumer{
+		PollFunc: func() func(i int) kafka.Event {
+			offset := 1
+			return func(i int) kafka.Event {
+				if offset > 10 {
+					return nil
+				}
+				time.Sleep(10 * time.Millisecond)
+				defer func() { offset++ }()
+				return &kafka.Message{
+					TopicPartition: kafka.TopicPartition{
+						Topic:     expectedTopicPartition.Topic,
+						Partition: expectedTopicPartition.Partition,
+						Offset:    kafka.Offset(offset),
+					},
+				}
+			}
+		}(),
+		ResumeFunc: func(partitions []kafka.TopicPartition) error {
+			defer func() { gotCallCount++ }()
+			part := partitions[0]
+			if !reflect.DeepEqual(part, expectedTopicPartition) {
+				return fmt.Errorf("[resume]: expected partition %v got partition %v\n", part, expectedTopicPartition)
+			}
+			return nil
+		},
+		PauseFunc: func(partitions []kafka.TopicPartition) error {
+			defer func() { gotCallCount++ }()
+			part := partitions[0]
+			if !reflect.DeepEqual(part, expectedTopicPartition) {
+				return fmt.Errorf("[pause]:expected part:%v got part:%v\n", expectedTopicPartition, part)
+			}
+			return nil
+		},
+		SubscribeTopicsFunc: func(strings []string, cb kafka.RebalanceCb) error {
+			return nil
+		},
+		StoreMessageFunc: func(message *kafka.Message) ([]kafka.TopicPartition, error) {
+			expectedReceive := makeTopicPartition("foo", 1, 10)
+			if !reflect.DeepEqual(message.TopicPartition, expectedReceive) {
+				return nil, fmt.Errorf("[storeMessage]:expected part:%v got part:%v\n", expectedTopicPartition, message.TopicPartition)
+			}
+			return []kafka.TopicPartition{expectedTopicPartition}, nil
+		},
+		CommitFunc: func() ([]kafka.TopicPartition, error) {
+			topicPartition := makeTopicPartition("foo", 1, 11)
+			return []kafka.TopicPartition{topicPartition}, nil
+		},
+		CloseFunc: func() error {
+			return nil
+		},
+	}
+
+	sendChan := make(chan []*kafka.Message)
+	omc := OffManConsumer{
+		kafCon:           &mock,
+		offMan:           offman.New(),
+		commitIntervalMS: 500,
+		lastCommit:       time.Now(),
+		batchSize:        100,
+		sendChan:         sendChan,
+	}
+
+	wait := make(chan struct{})
+	go func() {
+		for batch := range sendChan {
+			t.Logf("received batch of len %d\n", len(batch))
+			for _, msg := range batch {
+				t.Logf("processing %v\n", msg)
+				time.Sleep(5 * time.Millisecond)
+				_ = omc.Ack(msg)
+			}
+		}
+		close(wait)
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1000*time.Millisecond)
+	defer cancel()
+	err := omc.Consume(ctx, []string{"foo"})
+	if err != nil && !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("%v\n", err)
+	}
+	if gotCallCount != expectedCallCount {
+		t.Errorf("expected call count %d got %d\n", expectedCallCount, gotCallCount)
+	}
+
+	<-wait
 }

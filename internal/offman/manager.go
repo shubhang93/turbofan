@@ -12,8 +12,7 @@ const defaultTrackerSize = 256
 type TrackProgress struct {
 	Message *kafka.Message
 	toppar.TopPart
-	Committed       bool
-	PercentageAcked int64
+	Committed bool
 }
 
 type Manager struct {
@@ -76,10 +75,9 @@ func (m *Manager) CommittableMessages() map[toppar.TopPart]TrackProgress {
 		if ok {
 			committed := offsetTrack.Committed()
 			m.committableMessages[tp] = TrackProgress{
-				TopPart:         tp,
-				Committed:       committed,
-				Message:         message,
-				PercentageAcked: int64(message.TopicPartition.Offset) / (offsetTrack.End),
+				TopPart:   tp,
+				Committed: committed,
+				Message:   message,
 			}
 		}
 	}

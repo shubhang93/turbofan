@@ -57,6 +57,9 @@ func (m MockConsumer) Commit() ([]kafka.TopicPartition, error) {
 }
 
 func (m MockConsumer) String() string {
+	if m.StringFunc == nil {
+		return "test-consumer"
+	}
 	return m.StringFunc()
 }
 
