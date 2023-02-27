@@ -34,7 +34,7 @@ func main() {
 		worker.ProcessParallel(ctx, messageIn, func(m *kafka.Message) {
 			log.Printf("[Worker]: processing message %v\n", m.TopicPartition)
 			time.Sleep(1000 * time.Millisecond)
-			if err := cons.Ack(m); err != nil {
+			if err := cons.ACK(m); err != nil {
 				log.Println("ACK error:", err)
 			}
 		})

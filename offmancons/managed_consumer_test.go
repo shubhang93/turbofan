@@ -264,7 +264,7 @@ func TestOffManConsumer_Consume_runLoop(t *testing.T) {
 			for _, msg := range batch {
 				t.Logf("processing %v\n", msg)
 				time.Sleep(5 * time.Millisecond)
-				_ = omc.Ack(msg)
+				_ = omc.ACK(msg)
 			}
 		}
 		close(wait)

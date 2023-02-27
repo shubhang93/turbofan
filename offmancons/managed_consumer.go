@@ -229,7 +229,7 @@ func (omc *OffManConsumer) resumeParts(parts []kafka.TopicPartition) error {
 	return nil
 }
 
-func (omc *OffManConsumer) Ack(m *kafka.Message) error {
+func (omc *OffManConsumer) ACK(m *kafka.Message) error {
 	ktp := m.TopicPartition
 	tp := toppar.KafkaTopicPartToTopicPart(ktp)
 	return omc.offMan.Ack(tp, int64(ktp.Offset))

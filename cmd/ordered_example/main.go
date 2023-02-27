@@ -8,6 +8,7 @@ import (
 	"log"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -25,31 +26,9 @@ func main() {
 
 	workersDone := make(chan struct{})
 
-	// process each batch in its own goroutine, similar to
-	// partition ordered processing using kafka consumer threads
-	//go func() {
-	//	defer close(workersDone)
-	//
-	//	var wg sync.WaitGroup
-	//	for batch := range messageIn {
-	//		wg.Add(1)
-	//		go func(msgBatch []*kafka.Message) {
-	//			for _, msg := range msgBatch {
-	//				log.Printf("[process-func]:processing message {Part=%d,Topic=%s}", msg.TopicPartition.Partition, *msg.TopicPartition.Topic)
-	//				time.Sleep(1000 * time.Millisecond)
-	//				if err := cons.Ack(msg); err != nil {
-	//					log.Println("error ACK-ing")
-	//				}
-	//			}
-	//			defer wg.Done()
-	//		}(batch)
-	//	}
-	//
-	//	wg.Wait()
-	//}()
-
 	worker.ProcessOrdered(ctx, messageIn, func(m *kafka.Message) {
-
+		time.Sleep(100 * time.Millisecond)
+		_ = cons.ACK(m)
 	})
 
 	if err := cons.Consume(ctx, []string{"topic1"}); err != nil {
