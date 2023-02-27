@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/shubhang93/relcon/worker"
+	"github.com/shubhang93/turbofan/worker"
 	"log"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/shubhang93/relcon/offmancons"
+	"github.com/shubhang93/turbofan/offmancons"
 	"golang.org/x/net/context"
 )
 
@@ -21,7 +21,7 @@ func main() {
 	cons := offmancons.New(offmancons.Config{
 		BootstrapServers: []string{"localhost:9092"},
 		CommitIntervalMS: 5000,
-		ConsumerGroupID:  "relcon_001",
+		ConsumerGroupID:  "turbofan_001",
 		MessageBatchSize: 1000,
 		LogLevels:        []string{"consumer"},
 	}, messageIn)

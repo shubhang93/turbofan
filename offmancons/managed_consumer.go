@@ -2,14 +2,14 @@ package offmancons
 
 import (
 	"context"
-	"github.com/shubhang93/relcon/internal/offman"
+	"github.com/shubhang93/turbofan/internal/offman"
 	"log"
 	"sync"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/shubhang93/relcon/internal/debug"
-	"github.com/shubhang93/relcon/internal/toppar"
+	"github.com/shubhang93/turbofan/internal/debug"
+	"github.com/shubhang93/turbofan/internal/toppar"
 )
 
 type OffManConsumer struct {
