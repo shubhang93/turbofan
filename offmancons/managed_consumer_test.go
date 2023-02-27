@@ -282,3 +282,54 @@ func TestOffManConsumer_Consume_runLoop(t *testing.T) {
 
 	<-wait
 }
+
+func TestOffManConsumer_commitInterval(t *testing.T) {
+	expectedCallCount := 3
+	gotCallCount := 0
+	mock := MockConsumer{
+		CommitFunc: func() ([]kafka.TopicPartition, error) {
+			gotCallCount++
+			return []kafka.TopicPartition{}, nil
+		},
+		PauseFunc: func(partitions []kafka.TopicPartition) error {
+			return nil
+		},
+		ResumeFunc: func(partitions []kafka.TopicPartition) error {
+			return nil
+		},
+		PollFunc: func(i int) kafka.Event {
+			return &kafka.Message{
+				TopicPartition: makeTopicPartition("foo", 1, 10),
+			}
+		},
+	}
+
+	in := make(chan []*kafka.Message)
+	omc := OffManConsumer{
+		kafCon:           mock,
+		offMan:           offman.New(),
+		lastCommit:       time.Now(),
+		batchSize:        10,
+		sendChan:         in,
+		commitIntervalMS: 100,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 350*time.Millisecond)
+	defer cancel()
+
+	wait := make(chan struct{})
+	go func() {
+		for _ = range in {
+		}
+		close(wait)
+	}()
+
+	_ = omc.Consume(ctx, []string{"foo"})
+
+	if expectedCallCount != gotCallCount {
+		t.Errorf("expected call count %d got %d\n", expectedCallCount, gotCallCount)
+	}
+
+	<-wait
+
+}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/shubhang93/relcon/worker"
 	"log"
 	"os/signal"
 	"syscall"
@@ -30,7 +31,7 @@ func main() {
 	// process each message concurrently with an upper limit of 10 goroutines
 	go func() {
 		defer close(workersDone)
-		RunWorkers(ctx, messageIn, func(m *kafka.Message) {
+		worker.ProcessParallel(ctx, messageIn, func(m *kafka.Message) {
 			log.Printf("[Worker]: processing message %v\n", m.TopicPartition)
 			time.Sleep(1000 * time.Millisecond)
 			if err := cons.Ack(m); err != nil {

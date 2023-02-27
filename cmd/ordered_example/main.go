@@ -4,9 +4,7 @@ import (
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/shubhang93/relcon/offmancons"
-	"sync"
-	"time"
-
+	"github.com/shubhang93/relcon/worker"
 	"log"
 	"os/signal"
 	"syscall"
@@ -29,26 +27,30 @@ func main() {
 
 	// process each batch in its own goroutine, similar to
 	// partition ordered processing using kafka consumer threads
-	go func() {
-		defer close(workersDone)
+	//go func() {
+	//	defer close(workersDone)
+	//
+	//	var wg sync.WaitGroup
+	//	for batch := range messageIn {
+	//		wg.Add(1)
+	//		go func(msgBatch []*kafka.Message) {
+	//			for _, msg := range msgBatch {
+	//				log.Printf("[process-func]:processing message {Part=%d,Topic=%s}", msg.TopicPartition.Partition, *msg.TopicPartition.Topic)
+	//				time.Sleep(1000 * time.Millisecond)
+	//				if err := cons.Ack(msg); err != nil {
+	//					log.Println("error ACK-ing")
+	//				}
+	//			}
+	//			defer wg.Done()
+	//		}(batch)
+	//	}
+	//
+	//	wg.Wait()
+	//}()
 
-		var wg sync.WaitGroup
-		for batch := range messageIn {
-			wg.Add(1)
-			go func(msgBatch []*kafka.Message) {
-				for _, msg := range msgBatch {
-					log.Printf("[process-func]:processing message {Part=%d,Topic=%s}", msg.TopicPartition.Partition, *msg.TopicPartition.Topic)
-					time.Sleep(1000 * time.Millisecond)
-					if err := cons.Ack(msg); err != nil {
-						log.Println("error ACK-ing")
-					}
-				}
-				defer wg.Done()
-			}(batch)
-		}
+	worker.ProcessOrdered(ctx, messageIn, func(m *kafka.Message) {
 
-		wg.Wait()
-	}()
+	})
 
 	if err := cons.Consume(ctx, []string{"topic1"}); err != nil {
 		log.Println("error starting consumer:", err)

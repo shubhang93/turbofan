@@ -29,30 +29,53 @@ type MockConsumer struct {
 }
 
 func (m MockConsumer) Poll(i int) kafka.Event {
+	if m.PollFunc == nil {
+		return &kafka.Message{}
+	}
 	return m.PollFunc(i)
 }
 
 func (m MockConsumer) Resume(partitions []kafka.TopicPartition) error {
+	if m.ResumeFunc == nil {
+		return nil
+	}
 	return m.ResumeFunc(partitions)
 }
 
 func (m MockConsumer) Pause(partitions []kafka.TopicPartition) error {
+	if m.PauseFunc == nil {
+		return nil
+	}
 	return m.PauseFunc(partitions)
 }
 
 func (m MockConsumer) SubscribeTopics(topics []string, cb kafka.RebalanceCb) error {
+	if m.SubscribeTopicsFunc == nil {
+		return nil
+	}
 	return m.SubscribeTopicsFunc(topics, cb)
 }
 
 func (m MockConsumer) StoreMessage(message *kafka.Message) ([]kafka.TopicPartition, error) {
+	if m.StoreMessageFunc == nil {
+		return []kafka.TopicPartition{}, nil
+	}
 	return m.StoreMessageFunc(message)
 }
 
 func (m MockConsumer) StoreOffsets(partitions []kafka.TopicPartition) ([]kafka.TopicPartition, error) {
+	if m.StoreOffsetsFunc == nil {
+		return []kafka.TopicPartition{}, nil
+	}
 	return m.StoreOffsetsFunc(partitions)
 }
 
 func (m MockConsumer) Commit() ([]kafka.TopicPartition, error) {
+
+	if m.CommitFunc == nil {
+		return []kafka.TopicPartition{}, nil
+	}
+
 	return m.CommitFunc()
 }
 
@@ -64,5 +87,8 @@ func (m MockConsumer) String() string {
 }
 
 func (m MockConsumer) Close() error {
+	if m.CloseFunc == nil {
+		return nil
+	}
 	return m.CloseFunc()
 }
