@@ -1,4 +1,4 @@
-module github.com/shubhang93/relcon
+module github.com/shubhang93/turbofan
 
 go 1.19
 
