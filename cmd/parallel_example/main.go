@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/shubhang93/turbofan"
-	"github.com/shubhang93/turbofan/internal/kafcon"
 	"log"
 	"os/signal"
 	"syscall"
@@ -18,7 +17,7 @@ func main() {
 	defer cancel()
 	messageIn := make(chan []*kafka.Message)
 
-	cons := turbofan.New(kafcon.Config{
+	cons := turbofan.New(turbofan.Config{
 		BootstrapServers: []string{"localhost:9092"},
 		CommitIntervalMS: 5000,
 		ConsumerGroupID:  "turbofan_001",

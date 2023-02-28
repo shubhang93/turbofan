@@ -25,7 +25,7 @@ type OffsetManagedConsumer struct {
 
 const pollTimeoutMS = 100
 
-func New(conf kafcon.Config, messageIn chan []*kafka.Message) *OffsetManagedConsumer {
+func New(conf Config, messageIn chan []*kafka.Message) *OffsetManagedConsumer {
 	config := conf.ToConfigMap()
 	c, err := kafka.NewConsumer(&config)
 	if err != nil {
