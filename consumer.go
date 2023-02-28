@@ -118,7 +118,7 @@ func (omc *OffsetManagedConsumer) Consume(ctx context.Context, topics []string) 
 				partsToPause = append(partsToPause, toppar.TopicPartToKafkaTopicPart(part))
 			}
 
-			log.Printf("[consumer poll]: fetched %d records for %d parts", len(messages), len(parts))
+			debug.Log("[consumer poll]: fetched %d records for %d parts", len(messages), len(parts))
 
 			debug.Log("[consumer poll]: pausing partitions:%v", partsToPause)
 			if err := omc.pauseParts(partsToPause); err != nil {
