@@ -75,6 +75,7 @@ func (omc *OffsetManagedConsumer) pollBatch(ctx context.Context, timeoutMS int) 
 			case kafka.PartitionEOF:
 				// this is done as a hack to make sure that the log end offset
 				// is committed whenever an offset reset happens [ only if auto.offset.reset = latest ]
+				// bug https://github.com/confluentinc/confluent-kafka-go/issues/912
 				_, err := omc.kafCon.StoreOffsets([]kafka.TopicPartition{kafka.TopicPartition(event)})
 				if err != nil {
 					log.Printf("[warn partition EOF handler]: could not store offset for %v\n", event)
@@ -104,7 +105,7 @@ func (omc *OffsetManagedConsumer) Consume(ctx context.Context, topics []string) 
 		messages, err := omc.pollBatch(ctx, pollTimeoutMS)
 		if err != nil {
 			consumeErr = err
-			log.Printf("[consumer poll]:error received from poll:%v\n", err)
+			log.Printf("[consumer poll]: error received from poll:%v\n", err)
 			run = false
 			break
 		}
@@ -138,13 +139,13 @@ func (omc *OffsetManagedConsumer) Consume(ctx context.Context, topics []string) 
 	log.Printf("[consumer shutdown]: waiting for pending jobs to finish\n")
 	omc.wg.Wait()
 
-	log.Printf("[Consumer shutdown]:enqueueing remaining offsets to commit\n")
+	log.Printf("[Consumer shutdown]: enqueueing remaining offsets to commit\n")
 	if err := omc.commitOffsets(); err != nil {
-		log.Printf("[Consumer shutdown]:offset commit error:%v\n", err)
+		log.Printf("[Consumer shutdown]: offset commit error:%v\n", err)
 	}
 
 	if err := omc.kafCon.Close(); err != nil {
-		log.Printf("[Consumer shutdown]:error closing consumer:%v\n", err)
+		log.Printf("[Consumer shutdown]: error closing consumer:%v\n", err)
 	}
 
 	log.Printf("[Consumer shutdown]: closing in-channel\n")
@@ -223,7 +224,7 @@ func (omc *OffsetManagedConsumer) resumeParts(parts []kafka.TopicPartition) erro
 		return nil
 	}
 
-	log.Printf("[%s]resuming parts for %v\n", omc.kafCon.String(), parts)
+	debug.Log("[consumer resume]resuming parts for %v\n", parts)
 	if err := omc.kafCon.Resume(parts); err != nil {
 		return err
 	}
