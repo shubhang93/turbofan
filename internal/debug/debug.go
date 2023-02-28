@@ -5,8 +5,10 @@ import (
 	"os"
 )
 
+var debugVal, present = os.LookupEnv("TURBO_FAN_DEBUG")
+
 func Log(format string, args ...any) {
-	if value, ok := os.LookupEnv("TURBO_FAN_DEBUG"); ok && value == "1" {
+	if present && debugVal == "1" {
 		log.Printf(format, args...)
 	}
 }
