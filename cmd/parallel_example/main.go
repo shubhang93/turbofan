@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/shubhang93/turbofan"
 	"github.com/shubhang93/turbofan/internal/kafcon"
-	"github.com/shubhang93/turbofan/worker"
 	"log"
 	"os/signal"
 	"syscall"
@@ -32,7 +31,7 @@ func main() {
 	// process each message concurrently with an upper limit of 10 goroutines
 	go func() {
 		defer close(workersDone)
-		worker.ProcessParallel(ctx, messageIn, func(m *kafka.Message) {
+		turbofan.ProcessParallel(ctx, messageIn, func(m *kafka.Message) {
 			log.Printf("[Worker]: processing message %v\n", m.TopicPartition)
 			time.Sleep(1000 * time.Millisecond)
 			if err := cons.ACK(m); err != nil {

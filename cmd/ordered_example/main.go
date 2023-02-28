@@ -5,7 +5,6 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/shubhang93/turbofan"
 	"github.com/shubhang93/turbofan/internal/kafcon"
-	"github.com/shubhang93/turbofan/worker"
 	"log"
 	"os/signal"
 	"syscall"
@@ -17,7 +16,7 @@ func main() {
 	defer cancel()
 	messageIn := make(chan []*kafka.Message)
 
-	cons := turbofan.New(kafcon.Config{
+	tbf := turbofan.New(kafcon.Config{
 		BootstrapServers: []string{"localhost:9092"},
 		CommitIntervalMS: 5000,
 		ConsumerGroupID:  "turbofan_001",
@@ -27,12 +26,12 @@ func main() {
 
 	workersDone := make(chan struct{})
 
-	worker.ProcessOrdered(ctx, messageIn, func(m *kafka.Message) {
+	turbofan.ProcessOrdered(ctx, messageIn, func(m *kafka.Message) {
 		time.Sleep(100 * time.Millisecond)
-		_ = cons.ACK(m)
+		_ = tbf.ACK(m)
 	})
 
-	if err := cons.Consume(ctx, []string{"topic1"}); err != nil {
+	if err := tbf.Consume(ctx, []string{"topic1"}); err != nil {
 		log.Println("error starting consumer:", err)
 	}
 
