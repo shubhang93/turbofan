@@ -17,7 +17,7 @@ Parallelize Kafka processing by utilising the power of native go routines
 go get github.com/shubhang93/turbofan
 ```
 
-Refer to the `examples` directory for both ordered and parallel processing
+Refer to the `cmd` directory for both ordered and parallel processing
 
 ### Turbofan Configuration
 
