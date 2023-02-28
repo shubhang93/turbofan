@@ -8,6 +8,7 @@ import (
 	"github.com/shubhang93/turbofan/internal/kafcon"
 	"github.com/shubhang93/turbofan/internal/offman"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 )
@@ -329,6 +330,65 @@ func TestOffManConsumer_commitInterval(t *testing.T) {
 
 	if expectedCallCount != gotCallCount {
 		t.Errorf("expected call count %d got %d\n", expectedCallCount, gotCallCount)
+	}
+
+	<-wait
+
+}
+
+func TestOffsetManagedConsumer_MessageACK(t *testing.T) {
+
+	offset := 200
+	expectedTopicPartition := makeTopicPartition("foo", 1, 200)
+	mock := kafcon.MockConsumer{
+		PollFunc: func(i int) kafka.Event {
+			time.Sleep(10 * time.Millisecond)
+			defer func() { offset++ }()
+			return &kafka.Message{
+				TopicPartition: kafka.TopicPartition{
+					Topic:     toPtrStr("foo"),
+					Partition: 1,
+					Offset:    kafka.Offset(offset),
+				},
+			}
+		},
+		StoreMessageFunc: func(message *kafka.Message) ([]kafka.TopicPartition, error) {
+			if !reflect.DeepEqual(message.TopicPartition, expectedTopicPartition) {
+				return nil, fmt.Errorf("[store message]: expected %v to got %v", expectedTopicPartition, message.TopicPartition)
+			}
+			return []kafka.TopicPartition{}, nil
+		},
+	}
+
+	in := make(chan []*kafka.Message)
+	omc := OffsetManagedConsumer{
+		kafCon:           mock,
+		wg:               sync.WaitGroup{},
+		offMan:           offman.New(),
+		lastCommit:       time.Now(),
+		sendChan:         in,
+		batchSize:        100,
+		commitIntervalMS: 10,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+
+	wait := make(chan struct{})
+	go func() {
+		defer close(wait)
+		for batch := range in {
+			for i := range batch {
+				t.Logf("processing offset:%v\n", batch[i].TopicPartition)
+				_ = omc.ACK(batch[i])
+				time.Sleep(100 * time.Millisecond)
+			}
+		}
+	}()
+
+	err := omc.Consume(ctx, []string{"foo"})
+	if err != nil && !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("%v", err)
 	}
 
 	<-wait
