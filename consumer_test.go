@@ -1,10 +1,11 @@
-package offmancons
+package turbofan
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/shubhang93/turbofan/internal/kafcon"
 	"github.com/shubhang93/turbofan/internal/offman"
 	"reflect"
 	"testing"
@@ -38,7 +39,7 @@ func makeRecords(count int) []*kafka.Message {
 func TestOffManConsumer_pollBatch(t *testing.T) {
 	type pollTest struct {
 		Name         string
-		MockConsumer func() *MockConsumer
+		MockConsumer func() *kafcon.MockConsumer
 		Want         []*kafka.Message
 		WantError    bool
 		CtxFunc      func() (context.Context, context.CancelFunc)
@@ -46,8 +47,8 @@ func TestOffManConsumer_pollBatch(t *testing.T) {
 
 	tests := []pollTest{{
 		Name: "Poll returns an event of type *kafka.Message",
-		MockConsumer: func() *MockConsumer {
-			return &MockConsumer{
+		MockConsumer: func() *kafcon.MockConsumer {
+			return &kafcon.MockConsumer{
 				PollFunc: func(_ int) kafka.Event {
 					time.Sleep(10 * time.Millisecond)
 					return record
@@ -59,8 +60,8 @@ func TestOffManConsumer_pollBatch(t *testing.T) {
 	},
 		{
 			Name: "Poll returns one non fatal error event and message events",
-			MockConsumer: func() *MockConsumer {
-				return &MockConsumer{
+			MockConsumer: func() *kafcon.MockConsumer {
+				return &kafcon.MockConsumer{
 					PollFunc: func() func(int) kafka.Event {
 						counter := 0
 						return func(_ int) kafka.Event {
@@ -83,8 +84,8 @@ func TestOffManConsumer_pollBatch(t *testing.T) {
 		},
 		{
 			Name: "Poll returns a fatal error and message events",
-			MockConsumer: func() *MockConsumer {
-				return &MockConsumer{
+			MockConsumer: func() *kafcon.MockConsumer {
+				return &kafcon.MockConsumer{
 					PollFunc: func() func(i int) kafka.Event {
 						counter := 0
 						return func(_ int) kafka.Event {
@@ -102,8 +103,8 @@ func TestOffManConsumer_pollBatch(t *testing.T) {
 		},
 		{
 			Name: "Poll returns a max of batchSize number of messages",
-			MockConsumer: func() *MockConsumer {
-				return &MockConsumer{
+			MockConsumer: func() *kafcon.MockConsumer {
+				return &kafcon.MockConsumer{
 					PollFunc: func(i int) kafka.Event {
 						return &kafka.Message{}
 					},
@@ -114,8 +115,8 @@ func TestOffManConsumer_pollBatch(t *testing.T) {
 		},
 		{
 			Name: "Poll returns an error when context is cancelled",
-			MockConsumer: func() *MockConsumer {
-				return &MockConsumer{
+			MockConsumer: func() *kafcon.MockConsumer {
+				return &kafcon.MockConsumer{
 					PollFunc: func(i int) kafka.Event {
 						return &kafka.Message{}
 					},
@@ -134,7 +135,7 @@ func TestOffManConsumer_pollBatch(t *testing.T) {
 
 		t.Run(testCase.Name, func(t *testing.T) {
 			mock := testCase.MockConsumer()
-			omc := OffManConsumer{
+			omc := OffsetManagedConsumer{
 				batchSize: 100,
 				kafCon:    mock,
 			}
@@ -165,7 +166,7 @@ func TestOffManConsumer_PartitionEOF(t *testing.T) {
 		Offset:    200,
 	}
 
-	mock := MockConsumer{
+	mock := kafcon.MockConsumer{
 		StoreOffsetsFunc: func(partitions []kafka.TopicPartition) ([]kafka.TopicPartition, error) {
 			gotPartition := partitions[0]
 			gotPartition.Offset = 200
@@ -180,7 +181,7 @@ func TestOffManConsumer_PartitionEOF(t *testing.T) {
 		},
 	}
 
-	omc := OffManConsumer{batchSize: 100, kafCon: &mock}
+	omc := OffsetManagedConsumer{batchSize: 100, kafCon: &mock}
 	_, _ = omc.pollBatch(context.Background(), 100)
 
 }
@@ -194,7 +195,7 @@ func TestOffManConsumer_Consume_runLoop(t *testing.T) {
 	gotCallCount := 0
 	expectedCallCount := 2
 
-	mock := MockConsumer{
+	mock := kafcon.MockConsumer{
 		PollFunc: func() func(i int) kafka.Event {
 			offset := 1
 			return func(i int) kafka.Event {
@@ -248,7 +249,7 @@ func TestOffManConsumer_Consume_runLoop(t *testing.T) {
 	}
 
 	sendChan := make(chan []*kafka.Message)
-	omc := OffManConsumer{
+	omc := OffsetManagedConsumer{
 		kafCon:           &mock,
 		offMan:           offman.New(),
 		commitIntervalMS: 500,
@@ -286,7 +287,7 @@ func TestOffManConsumer_Consume_runLoop(t *testing.T) {
 func TestOffManConsumer_commitInterval(t *testing.T) {
 	expectedCallCount := 3
 	gotCallCount := 0
-	mock := MockConsumer{
+	mock := kafcon.MockConsumer{
 		CommitFunc: func() ([]kafka.TopicPartition, error) {
 			gotCallCount++
 			return []kafka.TopicPartition{}, nil
@@ -305,7 +306,7 @@ func TestOffManConsumer_commitInterval(t *testing.T) {
 	}
 
 	in := make(chan []*kafka.Message)
-	omc := OffManConsumer{
+	omc := OffsetManagedConsumer{
 		kafCon:           mock,
 		offMan:           offman.New(),
 		lastCommit:       time.Now(),

@@ -1,4 +1,4 @@
-package offmancons
+package kafcon
 
 import (
 	"github.com/shubhang93/turbofan/internal/offman"
@@ -8,7 +8,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
-func makeRebalanceCB(man *offman.Manager) func(consumer *kafka.Consumer, event kafka.Event) error {
+func MakeRebalanceCB(man *offman.Manager) func(consumer *kafka.Consumer, event kafka.Event) error {
 	return func(consumer *kafka.Consumer, event kafka.Event) error {
 		switch rbcEvent := event.(type) {
 		case kafka.AssignedPartitions:

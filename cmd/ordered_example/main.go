@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/shubhang93/turbofan/offmancons"
+	"github.com/shubhang93/turbofan"
+	"github.com/shubhang93/turbofan/internal/kafcon"
 	"github.com/shubhang93/turbofan/worker"
 	"log"
 	"os/signal"
@@ -16,7 +17,7 @@ func main() {
 	defer cancel()
 	messageIn := make(chan []*kafka.Message)
 
-	cons := offmancons.New(offmancons.Config{
+	cons := turbofan.New(kafcon.Config{
 		BootstrapServers: []string{"localhost:9092"},
 		CommitIntervalMS: 5000,
 		ConsumerGroupID:  "turbofan_001",

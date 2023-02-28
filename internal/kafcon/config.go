@@ -1,4 +1,4 @@
-package offmancons
+package kafcon
 
 import (
 	"strings"
@@ -17,7 +17,7 @@ type Config struct {
 	CommitIntervalMS  int
 }
 
-func (c Config) toConfigMap() kafka.ConfigMap {
+func (c Config) ToConfigMap() kafka.ConfigMap {
 	cm := kafka.ConfigMap{
 		"bootstrap.servers":        strings.Join(c.BootstrapServers, ","),
 		"debug":                    "consumer",

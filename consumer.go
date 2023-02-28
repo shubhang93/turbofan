@@ -1,7 +1,8 @@
-package offmancons
+package turbofan
 
 import (
 	"context"
+	"github.com/shubhang93/turbofan/internal/kafcon"
 	"github.com/shubhang93/turbofan/internal/offman"
 	"log"
 	"sync"
@@ -12,8 +13,8 @@ import (
 	"github.com/shubhang93/turbofan/internal/toppar"
 )
 
-type OffManConsumer struct {
-	kafCon           KafkaConsumer
+type OffsetManagedConsumer struct {
+	kafCon           kafcon.KafkaConsumer
 	wg               sync.WaitGroup
 	offMan           *offman.Manager
 	lastCommit       time.Time
@@ -24,8 +25,8 @@ type OffManConsumer struct {
 
 const pollTimeoutMS = 100
 
-func New(conf Config, messageIn chan []*kafka.Message) *OffManConsumer {
-	config := conf.toConfigMap()
+func New(conf kafcon.Config, messageIn chan []*kafka.Message) *OffsetManagedConsumer {
+	config := conf.ToConfigMap()
 	c, err := kafka.NewConsumer(&config)
 	if err != nil {
 		panic(err)
@@ -41,7 +42,7 @@ func New(conf Config, messageIn chan []*kafka.Message) *OffManConsumer {
 		commitIntervalMS = conf.CommitIntervalMS
 	}
 
-	return &OffManConsumer{
+	return &OffsetManagedConsumer{
 		kafCon:           c,
 		offMan:           offman.New(),
 		lastCommit:       time.Now(),
@@ -51,7 +52,7 @@ func New(conf Config, messageIn chan []*kafka.Message) *OffManConsumer {
 	}
 }
 
-func (omc *OffManConsumer) pollBatch(ctx context.Context, timeoutMS int) ([]*kafka.Message, error) {
+func (omc *OffsetManagedConsumer) pollBatch(ctx context.Context, timeoutMS int) ([]*kafka.Message, error) {
 	messages := make([]*kafka.Message, 0, omc.batchSize)
 	remainingTime := time.Duration(timeoutMS) * time.Millisecond
 	endTime := time.Now().Add(time.Duration(timeoutMS) * time.Millisecond)
@@ -88,9 +89,9 @@ func (omc *OffManConsumer) pollBatch(ctx context.Context, timeoutMS int) ([]*kaf
 	return messages, nil
 }
 
-func (omc *OffManConsumer) Consume(ctx context.Context, topics []string) error {
+func (omc *OffsetManagedConsumer) Consume(ctx context.Context, topics []string) error {
 
-	err := omc.kafCon.SubscribeTopics(topics, makeRebalanceCB(omc.offMan))
+	err := omc.kafCon.SubscribeTopics(topics, kafcon.MakeRebalanceCB(omc.offMan))
 
 	if err != nil {
 		panic(err)
@@ -154,7 +155,7 @@ func (omc *OffManConsumer) Consume(ctx context.Context, topics []string) error {
 	return consumeErr
 }
 
-func (omc *OffManConsumer) commitOffsets() error {
+func (omc *OffsetManagedConsumer) commitOffsets() error {
 
 	committableMessages := omc.offMan.CommittableMessages()
 
@@ -183,7 +184,7 @@ func (omc *OffManConsumer) commitOffsets() error {
 	return nil
 }
 
-func (omc *OffManConsumer) commitIfIntervalExceeded() error {
+func (omc *OffsetManagedConsumer) commitIfIntervalExceeded() error {
 
 	now := time.Now()
 	timeDiff := now.Sub(omc.lastCommit).Milliseconds()
@@ -210,14 +211,14 @@ func (omc *OffManConsumer) commitIfIntervalExceeded() error {
 	return nil
 }
 
-func (omc *OffManConsumer) pauseParts(parts []kafka.TopicPartition) error {
+func (omc *OffsetManagedConsumer) pauseParts(parts []kafka.TopicPartition) error {
 	if len(parts) > 0 {
 		return omc.kafCon.Pause(parts)
 	}
 	return nil
 }
 
-func (omc *OffManConsumer) resumeParts(parts []kafka.TopicPartition) error {
+func (omc *OffsetManagedConsumer) resumeParts(parts []kafka.TopicPartition) error {
 	if len(parts) < 1 {
 		return nil
 	}
@@ -229,13 +230,13 @@ func (omc *OffManConsumer) resumeParts(parts []kafka.TopicPartition) error {
 	return nil
 }
 
-func (omc *OffManConsumer) ACK(m *kafka.Message) error {
+func (omc *OffsetManagedConsumer) ACK(m *kafka.Message) error {
 	ktp := m.TopicPartition
 	tp := toppar.KafkaTopicPartToTopicPart(ktp)
 	return omc.offMan.Ack(tp, int64(ktp.Offset))
 }
 
-func (omc *OffManConsumer) handleRecords(ctx context.Context, messages []*kafka.Message) {
+func (omc *OffsetManagedConsumer) handleRecords(ctx context.Context, messages []*kafka.Message) {
 	omc.wg.Add(1)
 	done := ctx.Done()
 	go func() {
