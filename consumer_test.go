@@ -444,6 +444,7 @@ func TestOffsetManagedConsumer_DiscardACK(t *testing.T) {
 			for _, msg := range batch {
 				time.Sleep(50 * time.Millisecond)
 				if err := omc.ACK(msg); err != nil {
+					t.Logf("discarding:%v\n", msg)
 					gotDiscardCount++
 				}
 
