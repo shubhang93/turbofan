@@ -144,10 +144,9 @@ func (omc *OffsetManagedConsumer) Consume(ctx context.Context, topics []string) 
 		}
 	}
 
+	close(omc.consumerClosed)
 	log.Printf("[consumer shutdown]: waiting for pending jobs to finish\n")
 	omc.wg.Wait()
-
-	close(omc.consumerClosed)
 
 	log.Printf("[Consumer shutdown]: enqueueing remaining offsets to commit\n")
 
