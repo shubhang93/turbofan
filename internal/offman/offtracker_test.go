@@ -6,7 +6,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
-func TestCommittableMessage(t *testing.T) {
+func TestCommittableMessageACK(t *testing.T) {
 
 	messages := []*kafka.Message{
 		{TopicPartition: kafka.TopicPartition{Offset: 1}},
@@ -16,7 +16,7 @@ func TestCommittableMessage(t *testing.T) {
 		{TopicPartition: kafka.TopicPartition{Offset: 5}},
 	}
 
-	track := NewTrack(messages)
+	track := LoadTrack(messages)
 
 	// first offset is not ACKED
 	msg, ok := track.CommittableMessage()

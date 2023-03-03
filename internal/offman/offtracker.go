@@ -21,7 +21,7 @@ type OffsetTrack struct {
 	End              int64
 }
 
-func NewTrack(messages []*kafka.Message) *OffsetTrack {
+func LoadTrack(messages []*kafka.Message) *OffsetTrack {
 
 	t := OffsetTrack{
 		messages: make(map[int64]*MessageContainer, len(messages)),
@@ -29,6 +29,7 @@ func NewTrack(messages []*kafka.Message) *OffsetTrack {
 		End:      int64(messages[len(messages)-1].TopicPartition.Offset),
 		Start:    int64(messages[0].TopicPartition.Offset),
 	}
+
 	for i, msg := range messages {
 		offset := int64(msg.TopicPartition.Offset)
 		t.order[i] = offset
@@ -39,6 +40,7 @@ func NewTrack(messages []*kafka.Message) *OffsetTrack {
 }
 
 func (t *OffsetTrack) UpdateStatus(offset int64, status AckStatus) error {
+
 	mc, ok := t.messages[offset]
 	start, end := t.order[0], t.order[len(t.order)-1]
 

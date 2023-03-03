@@ -13,6 +13,12 @@ import (
 	"github.com/shubhang93/turbofan/internal/toppar"
 )
 
+type ErrACKDiscard string
+
+func (e ErrACKDiscard) Error() string {
+	return string(e)
+}
+
 type OffsetManagedConsumer struct {
 	kafCon           kafcon.KafkaConsumer
 	wg               sync.WaitGroup
@@ -21,6 +27,7 @@ type OffsetManagedConsumer struct {
 	sendChan         chan []*kafka.Message
 	batchSize        int
 	commitIntervalMS int64
+	consumerClosed   chan struct{}
 }
 
 const pollTimeoutMS = 100
@@ -48,6 +55,7 @@ func New(conf Config, messageIn chan []*kafka.Message) *OffsetManagedConsumer {
 		lastCommit:       time.Now(),
 		sendChan:         messageIn,
 		batchSize:        batchSize,
+		consumerClosed:   make(chan struct{}),
 		commitIntervalMS: int64(commitIntervalMS),
 	}
 }
@@ -139,7 +147,10 @@ func (omc *OffsetManagedConsumer) Consume(ctx context.Context, topics []string) 
 	log.Printf("[consumer shutdown]: waiting for pending jobs to finish\n")
 	omc.wg.Wait()
 
+	close(omc.consumerClosed)
+
 	log.Printf("[Consumer shutdown]: enqueueing remaining offsets to commit\n")
+
 	if err := omc.commitOffsets(); err != nil {
 		log.Printf("[Consumer shutdown]: offset commit error:%v\n", err)
 	}
@@ -232,9 +243,14 @@ func (omc *OffsetManagedConsumer) resumeParts(parts []kafka.TopicPartition) erro
 }
 
 func (omc *OffsetManagedConsumer) ACK(m *kafka.Message) error {
-	ktp := m.TopicPartition
-	tp := toppar.KafkaTopicPartToTopicPart(ktp)
-	return omc.offMan.Ack(tp, int64(ktp.Offset))
+	select {
+	case <-omc.consumerClosed:
+		return ErrACKDiscard("consumer closed, discarding ACK")
+	default:
+		ktp := m.TopicPartition
+		tp := toppar.KafkaTopicPartToTopicPart(ktp)
+		return omc.offMan.Ack(tp, int64(ktp.Offset))
+	}
 }
 
 func (omc *OffsetManagedConsumer) handleRecords(ctx context.Context, messages []*kafka.Message) {
