@@ -86,6 +86,6 @@ func (t *OffsetTrack) Committed() bool {
 	return t.messages[lastOffset].Ack == StatusCommitted
 }
 
-func (t *OffsetTrack) CommitCheckpoint() int64 {
+func (t *OffsetTrack) LastCommittedOffset() int64 {
 	return t.commitCheckpoint
 }
