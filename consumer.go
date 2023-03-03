@@ -27,7 +27,6 @@ type OffsetManagedConsumer struct {
 	sendChan         chan []*kafka.Message
 	batchSize        int
 	commitIntervalMS int64
-	consumerClosed   chan struct{}
 }
 
 const pollTimeoutMS = 100
@@ -55,7 +54,6 @@ func New(conf Config, messageIn chan []*kafka.Message) *OffsetManagedConsumer {
 		lastCommit:       time.Now(),
 		sendChan:         messageIn,
 		batchSize:        batchSize,
-		consumerClosed:   make(chan struct{}),
 		commitIntervalMS: int64(commitIntervalMS),
 	}
 }
@@ -144,7 +142,6 @@ func (omc *OffsetManagedConsumer) Consume(ctx context.Context, topics []string) 
 		}
 	}
 
-	close(omc.consumerClosed)
 	log.Printf("[consumer shutdown]: waiting for pending jobs to finish\n")
 	omc.wg.Wait()
 
@@ -154,6 +151,8 @@ func (omc *OffsetManagedConsumer) Consume(ctx context.Context, topics []string) 
 		log.Printf("[Consumer shutdown]: offset commit error:%v\n", err)
 	}
 
+	log.Println("[Consumer shutdown]: future acknowledgements will not be committed")
+
 	if err := omc.kafCon.Close(); err != nil {
 		log.Printf("[Consumer shutdown]: error closing consumer:%v\n", err)
 	}
@@ -161,7 +160,6 @@ func (omc *OffsetManagedConsumer) Consume(ctx context.Context, topics []string) 
 	log.Printf("[Consumer shutdown]: closing in-channel\n")
 	close(omc.sendChan)
 
-	log.Println("[Consumer shutdown]: Discarding future acknowledgements")
 	log.Println("[Consumer shutdown]: shutdown complete")
 	return consumeErr
 }
@@ -242,14 +240,10 @@ func (omc *OffsetManagedConsumer) resumeParts(parts []kafka.TopicPartition) erro
 }
 
 func (omc *OffsetManagedConsumer) ACK(m *kafka.Message) error {
-	select {
-	case <-omc.consumerClosed:
-		return ErrACKDiscard("consumer closed, discarding ACK")
-	default:
-		ktp := m.TopicPartition
-		tp := toppar.KafkaTopicPartToTopicPart(ktp)
-		return omc.offMan.Ack(tp, int64(ktp.Offset))
-	}
+	ktp := m.TopicPartition
+	tp := toppar.KafkaTopicPartToTopicPart(ktp)
+	return omc.offMan.Ack(tp, int64(ktp.Offset))
+
 }
 
 func (omc *OffsetManagedConsumer) handleRecords(ctx context.Context, messages []*kafka.Message) {

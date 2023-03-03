@@ -257,7 +257,6 @@ func TestOffManConsumer_Consume_runLoop(t *testing.T) {
 		lastCommit:       time.Now(),
 		batchSize:        100,
 		sendChan:         sendChan,
-		consumerClosed:   make(chan struct{}),
 	}
 
 	wait := make(chan struct{})
@@ -314,7 +313,6 @@ func TestOffManConsumer_commitInterval(t *testing.T) {
 		lastCommit:       time.Now(),
 		batchSize:        10,
 		sendChan:         in,
-		consumerClosed:   make(chan struct{}),
 		commitIntervalMS: 100,
 	}
 
@@ -371,7 +369,6 @@ func TestOffsetManagedConsumer_MessageACK(t *testing.T) {
 		sendChan:         in,
 		batchSize:        100,
 		commitIntervalMS: 10,
-		consumerClosed:   make(chan struct{}),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
@@ -395,71 +392,5 @@ func TestOffsetManagedConsumer_MessageACK(t *testing.T) {
 	}
 
 	<-wait
-
-}
-
-func TestOffsetManagedConsumer_DiscardACK(t *testing.T) {
-
-	offset := 10
-	storedOffset := 0
-	mock := kafcon.MockConsumer{
-		PollFunc: func(i int) kafka.Event {
-			defer func() { offset++ }()
-			if offset < 20 {
-				return &kafka.Message{TopicPartition: makeTopicPartition("foo", 1, kafka.Offset(offset))}
-			}
-			return nil
-		},
-		StoreMessageFunc: func(message *kafka.Message) ([]kafka.TopicPartition, error) {
-			storedOffset = int(message.TopicPartition.Offset)
-			return nil, nil
-		},
-
-		CommitFunc: func() ([]kafka.TopicPartition, error) {
-			t.Logf("[stored offset]:%d\n", storedOffset)
-			return []kafka.TopicPartition{{
-				Topic:     toPtrStr("foo"),
-				Offset:    kafka.Offset(storedOffset) + 1,
-				Partition: 1,
-			}}, nil
-		},
-	}
-
-	in := make(chan []*kafka.Message)
-	omc := OffsetManagedConsumer{
-		kafCon:           mock,
-		offMan:           offman.New(),
-		sendChan:         in,
-		batchSize:        10,
-		lastCommit:       time.Now(),
-		commitIntervalMS: 20,
-		consumerClosed:   make(chan struct{}),
-	}
-
-	expectedDiscardCount := 7
-	gotDiscardCount := 0
-	wait := make(chan struct{})
-	go func() {
-		for batch := range in {
-			for _, msg := range batch {
-				time.Sleep(50 * time.Millisecond)
-				if err := omc.ACK(msg); err != nil {
-					t.Logf("discarding:%v\n", msg)
-					gotDiscardCount++
-				}
-
-			}
-		}
-		close(wait)
-	}()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
-	defer cancel()
-	_ = omc.Consume(ctx, []string{"foo"})
-	<-wait
-
-	if expectedDiscardCount != gotDiscardCount {
-		t.Errorf("expected discard count %v got discard count %v", expectedDiscardCount, gotDiscardCount)
-	}
 
 }
