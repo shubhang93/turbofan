@@ -1,6 +1,7 @@
 package offman
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
@@ -92,4 +93,16 @@ func (m *Manager) ClearPartitions(topicParts []toppar.TopPart) {
 		delete(m.tracks, tp)
 		delete(m.committableMessages, tp)
 	}
+}
+
+func (m *Manager) CommitSnapshot() map[string]int64 {
+	// not a thread safe method
+	// should be used for consumer shutdown purposes only
+	snapshot := make(map[string]int64, len(m.tracks))
+
+	for tp, track := range m.tracks {
+		tpSerialized := fmt.Sprintf("%s", tp)
+		snapshot[tpSerialized] = track.LastCommittedOffset()
+	}
+	return snapshot
 }
