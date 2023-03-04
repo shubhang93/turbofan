@@ -13,12 +13,6 @@ import (
 	"github.com/shubhang93/turbofan/internal/toppar"
 )
 
-type ErrACKDiscard string
-
-func (e ErrACKDiscard) Error() string {
-	return string(e)
-}
-
 type OffsetManagedConsumer struct {
 	kafCon           kafcon.KafkaConsumer
 	wg               sync.WaitGroup
