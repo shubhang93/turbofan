@@ -42,7 +42,7 @@ func (c Config) ToConfigMap() kafka.ConfigMap {
 		cm["max.poll.interval.ms"] = c.MaxPollIntervalMS
 	}
 
-	if c.LogLevels != nil {
+	if len(c.LogLevels) > 0 {
 		cm["debug"] = strings.Join(c.LogLevels, ",")
 	}
 
