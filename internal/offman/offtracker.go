@@ -7,8 +7,8 @@ import (
 )
 
 type MessageContainer struct {
-	Message *kafka.Message
-	Ack     AckStatus
+	Message   *kafka.Message
+	ACKStatus StatusACK
 }
 
 type OffsetTrack struct {
@@ -21,7 +21,7 @@ type OffsetTrack struct {
 	End              int64
 }
 
-func LoadTrack(messages []*kafka.Message) *OffsetTrack {
+func NewTrack(messages []*kafka.Message) *OffsetTrack {
 
 	t := OffsetTrack{
 		messages: make(map[int64]*MessageContainer, len(messages)),
@@ -39,7 +39,7 @@ func LoadTrack(messages []*kafka.Message) *OffsetTrack {
 	return &t
 }
 
-func (t *OffsetTrack) UpdateStatus(offset int64, status AckStatus) error {
+func (t *OffsetTrack) UpdateStatus(offset int64, status StatusACK) error {
 
 	mc, ok := t.messages[offset]
 	start, end := t.order[0], t.order[len(t.order)-1]
@@ -48,7 +48,7 @@ func (t *OffsetTrack) UpdateStatus(offset int64, status AckStatus) error {
 		return fmt.Errorf("{offset=%d status=%s base=%d end=%d} offset update is out of range", offset, status, start, end)
 	}
 
-	mc.Ack = status
+	mc.ACKStatus = status
 	if status == StatusCommitted {
 		t.commitCheckpoint = offset
 	}
@@ -60,7 +60,7 @@ func (t *OffsetTrack) CommittableMessage() (*kafka.Message, bool) {
 	for i := t.needle; i < len(t.order); i++ {
 		offset := t.order[i]
 		msg := t.messages[offset]
-		if msg.Ack == StatusNack {
+		if msg.ACKStatus == StatusNack {
 			break
 		}
 		t.needle = i
@@ -83,7 +83,7 @@ func (t *OffsetTrack) Finished() bool {
 
 func (t *OffsetTrack) Committed() bool {
 	lastOffset := t.order[len(t.order)-1]
-	return t.messages[lastOffset].Ack == StatusCommitted
+	return t.messages[lastOffset].ACKStatus == StatusCommitted
 }
 
 func (t *OffsetTrack) LastCommittedOffset() int64 {

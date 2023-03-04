@@ -34,7 +34,7 @@ func (m *Manager) LoadPartitions(parts map[toppar.TopPart][]*kafka.Message) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for tp, messages := range parts {
-		m.tracks[tp] = LoadTrack(messages)
+		m.tracks[tp] = NewTrack(messages)
 	}
 }
 

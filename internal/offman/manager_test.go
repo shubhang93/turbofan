@@ -26,12 +26,12 @@ func TestLoadPartitions(t *testing.T) {
 	offsetTrackOne := OffsetTrack{
 		messages: map[int64]*MessageContainer{
 			200: {
-				Message: &kafka.Message{TopicPartition: kafka.TopicPartition{Offset: 200}},
-				Ack:     0,
+				Message:   &kafka.Message{TopicPartition: kafka.TopicPartition{Offset: 200}},
+				ACKStatus: 0,
 			},
 			201: {
-				Message: &kafka.Message{TopicPartition: kafka.TopicPartition{Offset: 201}},
-				Ack:     0,
+				Message:   &kafka.Message{TopicPartition: kafka.TopicPartition{Offset: 201}},
+				ACKStatus: 0,
 			},
 		},
 		commitCheckpoint: 0,

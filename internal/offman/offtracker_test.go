@@ -16,7 +16,7 @@ func TestCommittableMessageACK(t *testing.T) {
 		{TopicPartition: kafka.TopicPartition{Offset: 5}},
 	}
 
-	track := LoadTrack(messages)
+	track := NewTrack(messages)
 
 	// first offset is not ACKED
 	msg, ok := track.CommittableMessage()
@@ -58,6 +58,7 @@ func TestCommittableMessageACK(t *testing.T) {
 	err := track.UpdateStatus(6, StatusAck)
 	if err == nil {
 		t.Errorf("expected an out of range offset error")
+		return
 	}
 	t.Logf("%v\n", err)
 

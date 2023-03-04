@@ -1,18 +1,18 @@
 package offman
 
-type AckStatus int8
+type StatusACK int8
 
-func (a AckStatus) MarshalText() (text []byte, err error) {
+func (a StatusACK) MarshalText() (text []byte, err error) {
 	return []byte(a.String()), nil
 }
 
 const (
-	StatusNack AckStatus = iota
+	StatusNack StatusACK = iota
 	StatusAck
 	StatusCommitted
 )
 
-func (a AckStatus) String() string {
+func (a StatusACK) String() string {
 	switch a {
 	case StatusAck:
 		return "ACK"
