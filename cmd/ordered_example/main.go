@@ -25,10 +25,13 @@ func main() {
 
 	workersDone := make(chan struct{})
 
-	turbofan.ProcessOrdered(ctx, messageIn, func(m *kafka.Message) {
-		time.Sleep(100 * time.Millisecond)
-		_ = tbf.ACK(m)
-	})
+	go func() {
+		turbofan.ProcessOrdered(ctx, messageIn, func(m *kafka.Message) {
+			time.Sleep(100 * time.Millisecond)
+			_ = tbf.ACK(m)
+		})
+		close(workersDone)
+	}()
 
 	if err := tbf.Consume(ctx, []string{"topic1"}); err != nil {
 		log.Println("error starting consumer:", err)
