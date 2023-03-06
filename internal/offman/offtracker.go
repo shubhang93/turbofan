@@ -43,9 +43,9 @@ func (t *OffsetTrack) Load(msgs []*kafka.Message) {
 	t.Start = int64(msgs[0].TopicPartition.Offset)
 	t.End = int64(msgs[len(msgs)-1].TopicPartition.Offset)
 
-	for _, msg := range msgs {
+	for i, msg := range msgs {
 		offset := int64(msg.TopicPartition.Offset)
-		t.order = append(t.order, offset)
+		t.order[i] = offset
 		t.messages[offset] = &MessageContainer{Message: msg}
 	}
 }
@@ -93,8 +93,7 @@ func (t *OffsetTrack) Finished() bool {
 }
 
 func (t *OffsetTrack) Committed() bool {
-	lastOffset := t.order[len(t.order)-1]
-	return t.messages[lastOffset].ACKStatus == StatusCommitted
+	return t.messages[t.needleOffset].ACKStatus == StatusCommitted
 }
 
 func (t *OffsetTrack) LastCommittedOffset() int64 {
@@ -113,5 +112,7 @@ func (t *OffsetTrack) Reset() {
 		delete(t.messages, off)
 	}
 
-	t.order = t.order[:0]
+	for i := range t.order {
+		t.order[i] = 0
+	}
 }

@@ -252,7 +252,7 @@ func TestOffManConsumer_Consume_runLoop(t *testing.T) {
 	sendChan := make(chan []*kafka.Message)
 	omc := OffsetManagedConsumer{
 		kafCon:           &mock,
-		offMan:           offman.New(),
+		offMan:           offman.New(10),
 		commitIntervalMS: 500,
 		lastCommit:       time.Now(),
 		batchSize:        100,
@@ -309,7 +309,7 @@ func TestOffManConsumer_commitInterval(t *testing.T) {
 	in := make(chan []*kafka.Message)
 	omc := OffsetManagedConsumer{
 		kafCon:           mock,
-		offMan:           offman.New(),
+		offMan:           offman.New(10),
 		lastCommit:       time.Now(),
 		batchSize:        10,
 		sendChan:         in,
@@ -364,7 +364,7 @@ func TestOffsetManagedConsumer_MessageACK(t *testing.T) {
 	omc := OffsetManagedConsumer{
 		kafCon:           mock,
 		wg:               sync.WaitGroup{},
-		offMan:           offman.New(),
+		offMan:           offman.New(100),
 		lastCommit:       time.Now(),
 		sendChan:         in,
 		batchSize:        100,

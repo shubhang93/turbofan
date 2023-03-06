@@ -44,7 +44,7 @@ func New(conf Config, messageIn chan []*kafka.Message) *OffsetManagedConsumer {
 
 	return &OffsetManagedConsumer{
 		kafCon:           c,
-		offMan:           offman.New(),
+		offMan:           offman.New(batchSize),
 		lastCommit:       time.Now(),
 		sendChan:         messageIn,
 		batchSize:        batchSize,

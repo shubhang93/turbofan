@@ -49,7 +49,7 @@ func TestLoadPartitions(t *testing.T) {
 			},
 		},
 		commitCheckpoint: 0,
-		order:            []int64{505},
+		order:            []int64{505, 0},
 		needle:           0,
 		needleOffset:     0,
 		Start:            505,

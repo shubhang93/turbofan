@@ -33,7 +33,7 @@ func TestTrackPool_Put(t *testing.T) {
 
 	newTrack := &OffsetTrack{
 		messages: make(map[int64]*MessageContainer, 2),
-		order:    make([]int64, 0, 2),
+		order:    make([]int64, 2),
 	}
 	if !reflect.DeepEqual(ot, newTrack) {
 		t.Errorf("expected %+v got %+v\n", newTrack, ot)
