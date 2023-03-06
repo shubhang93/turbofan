@@ -9,8 +9,8 @@ import (
 func TestTrackPool_Get(t *testing.T) {
 	tp := NewTrackPool(100)
 	ot := tp.Get()
-	if len(ot.order) != 100 {
-		t.Errorf("expected %d got %d\n", 100, len(ot.order))
+	if cap(ot.order) != 100 {
+		t.Errorf("expected %d got %d\n", 100, cap(ot.order))
 	}
 }
 
@@ -33,7 +33,7 @@ func TestTrackPool_Put(t *testing.T) {
 
 	newTrack := &OffsetTrack{
 		messages: make(map[int64]*MessageContainer, 2),
-		order:    make([]int64, 2),
+		order:    make([]int64, 0, 2),
 	}
 	if !reflect.DeepEqual(ot, newTrack) {
 		t.Errorf("expected %+v got %+v\n", newTrack, ot)

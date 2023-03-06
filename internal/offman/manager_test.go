@@ -12,7 +12,7 @@ func strPtr(s string) *string {
 }
 
 func TestLoadPartitions(t *testing.T) {
-	man := New()
+	man := New(2)
 	parts := map[toppar.TopPart][]*kafka.Message{
 		toppar.TopPart{Partition: 0, Topic: "a"}: {
 			{TopicPartition: kafka.TopicPartition{Offset: 200}},
@@ -69,13 +69,13 @@ func TestLoadPartitions(t *testing.T) {
 			return
 		}
 		if !reflect.DeepEqual(*expectedTrack, *gotTrack) {
-			t.Errorf("expected track:%v got track:%v\n", *expectedTrack, *gotTrack)
+			t.Errorf("expected track:%+v\n got track:%+v\n", *expectedTrack, *gotTrack)
 		}
 	}
 }
 
 func TestManager_MarkCommitCheckpoint(t *testing.T) {
-	man := New()
+	man := New(2)
 	parts := map[toppar.TopPart][]*kafka.Message{
 		toppar.TopPart{Partition: 0, Topic: "foo"}: {{TopicPartition: kafka.TopicPartition{
 			Topic:     strPtr("foo"),

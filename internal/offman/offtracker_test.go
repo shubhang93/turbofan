@@ -70,7 +70,7 @@ func TestCommittableMessageACK(t *testing.T) {
 
 func TestOffsetTrack_Reset(t *testing.T) {
 	want := &OffsetTrack{
-		order:    make([]int64, 2),
+		order:    make([]int64, 0, 2),
 		messages: make(map[int64]*MessageContainer, 2),
 	}
 	got := NewTrackPool(2).Get()

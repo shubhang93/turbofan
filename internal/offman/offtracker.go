@@ -43,9 +43,9 @@ func (t *OffsetTrack) Load(msgs []*kafka.Message) {
 	t.Start = int64(msgs[0].TopicPartition.Offset)
 	t.End = int64(msgs[len(msgs)-1].TopicPartition.Offset)
 
-	for i, msg := range msgs {
+	for _, msg := range msgs {
 		offset := int64(msg.TopicPartition.Offset)
-		t.order[i] = offset
+		t.order = append(t.order, offset)
 		t.messages[offset] = &MessageContainer{Message: msg}
 	}
 }
@@ -113,7 +113,5 @@ func (t *OffsetTrack) Reset() {
 		delete(t.messages, off)
 	}
 
-	for i := range t.order {
-		t.order[i] = 0
-	}
+	t.order = t.order[:0]
 }
