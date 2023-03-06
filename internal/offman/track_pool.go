@@ -2,20 +2,27 @@ package offman
 
 import "sync"
 
+const defaultTrackPoolSize = 256
+
+// This is not a thread safe pool and should only be used by one goroutine
+
 type TrackPool struct {
-	pool *sync.Pool
+	pool      sync.Pool
+	batchSize int
 }
 
 func NewTrackPool(batchSize int) *TrackPool {
-	pool := sync.Pool{
-		New: func() any {
-			return &OffsetTrack{
-				messages: make(map[int64]*MessageContainer, batchSize),
-				order:    make([]int64, batchSize),
-			}
+	return &TrackPool{
+		pool: sync.Pool{
+			New: func() any {
+				return &OffsetTrack{
+					messages: make(map[int64]*MessageContainer, batchSize),
+					order:    make([]int64, batchSize),
+				}
+			},
 		},
+		batchSize: batchSize,
 	}
-	return &TrackPool{pool: &pool}
 }
 
 func (tp *TrackPool) Get() *OffsetTrack {

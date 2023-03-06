@@ -1,11 +1,15 @@
 package offman
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
+func toPtrStr(v string) *string {
+	return &v
+}
 func TestCommittableMessageACK(t *testing.T) {
 
 	messages := []*kafka.Message{
@@ -62,4 +66,24 @@ func TestCommittableMessageACK(t *testing.T) {
 	}
 	t.Logf("%v\n", err)
 
+}
+
+func TestOffsetTrack_Reset(t *testing.T) {
+	want := &OffsetTrack{
+		order:    make([]int64, 2),
+		messages: make(map[int64]*MessageContainer, 2),
+	}
+	got := NewTrackPool(2).Get()
+	got.Load([]*kafka.Message{
+		{
+			TopicPartition: kafka.TopicPartition{Offset: 100, Topic: toPtrStr("foo"), Partition: 1},
+		},
+		{
+			TopicPartition: kafka.TopicPartition{Offset: 101, Topic: toPtrStr("foo"), Partition: 1},
+		}})
+
+	got.Reset()
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("want %+v got %+v\n", want, got)
+	}
 }
