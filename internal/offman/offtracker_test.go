@@ -20,7 +20,8 @@ func TestCommittableMessageACK(t *testing.T) {
 		{TopicPartition: kafka.TopicPartition{Offset: 5}},
 	}
 
-	track := NewTrack(messages)
+	track := NewTrackPool(5).Get()
+	track.Load(messages)
 
 	// first offset is not ACKED
 	msg, ok := track.CommittableMessage()
