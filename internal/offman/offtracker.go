@@ -52,8 +52,10 @@ func (t *OffsetTrack) CommittableMessage() (*kafka.Message, bool) {
 
 	for i := t.needle; i < len(t.order); i++ {
 		offset := t.order[i]
-		msg := t.messages[offset]
-		if msg.ACKStatus == StatusNack {
+		msg, ok := t.messages[offset]
+		// allocated batch size can be greater than the number of messages
+		// if batch size == 10 and len(messages) == 5 this can happen
+		if !ok || msg.ACKStatus == StatusNack {
 			break
 		}
 		t.needle = i
@@ -71,7 +73,7 @@ func (t *OffsetTrack) CommittableMessage() (*kafka.Message, bool) {
 }
 
 func (t *OffsetTrack) Finished() bool {
-	return t.needle == len(t.order)-1
+	return t.needleOffset == t.End
 }
 
 func (t *OffsetTrack) Committed() bool {
