@@ -13,7 +13,6 @@ func NewTrackPool(batchSize int) *TrackPool {
 			New: func() any {
 				return &OffsetTrack{
 					messages: make(map[int64]*MessageContainer, batchSize),
-					order:    make([]int64, batchSize),
 				}
 			},
 		},

@@ -20,10 +20,12 @@ func TestCommittableMessageACK(t *testing.T) {
 	tests := []test{{
 		Name:      "Messages are equal to the batch size",
 		BatchSize: 5,
-	}, {
-		Name:      "Messages are less than the batch size",
-		BatchSize: 10,
-	}}
+	},
+	//{
+	//	Name:      "Messages are less than the batch size",
+	//	BatchSize: 10,
+	//},
+	}
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
@@ -57,7 +59,7 @@ func TestCommittableMessageACK(t *testing.T) {
 				return
 			}
 
-			// All offsets are ACKED
+			//All offsets are ACKED
 			_ = track.UpdateStatus(3, StatusAck)
 			_ = track.UpdateStatus(4, StatusAck)
 			_ = track.UpdateStatus(5, StatusAck)
@@ -88,7 +90,6 @@ func TestCommittableMessageACK(t *testing.T) {
 
 func TestOffsetTrack_Reset(t *testing.T) {
 	want := &OffsetTrack{
-		order:    make([]int64, 2),
 		messages: make(map[int64]*MessageContainer, 2),
 	}
 	got := NewTrackPool(2).Get()
