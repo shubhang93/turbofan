@@ -21,10 +21,10 @@ func TestCommittableMessageACK(t *testing.T) {
 		Name:      "Messages are equal to the batch size",
 		BatchSize: 5,
 	},
-	//{
-	//	Name:      "Messages are less than the batch size",
-	//	BatchSize: 10,
-	//},
+		{
+			Name:      "Messages are less than the batch size",
+			BatchSize: 10,
+		},
 	}
 
 	for _, test := range tests {
