@@ -1,7 +1,9 @@
 package kafcon
 
 import (
+	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"io"
 )
 
 type KafkaConsumer interface {
@@ -12,8 +14,8 @@ type KafkaConsumer interface {
 	StoreMessage(message *kafka.Message) ([]kafka.TopicPartition, error)
 	StoreOffsets([]kafka.TopicPartition) ([]kafka.TopicPartition, error)
 	Commit() ([]kafka.TopicPartition, error)
-	String() string
-	Close() error
+	io.Closer
+	fmt.Stringer
 }
 
 type MockConsumer struct {

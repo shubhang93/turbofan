@@ -20,13 +20,15 @@ type Manager struct {
 	tracks              map[toppar.TopPart]*OffsetTrack
 	mu                  sync.Mutex
 	committableMessages map[toppar.TopPart]TrackProgress
+	tpool               *TrackPool
 }
 
-func New() *Manager {
+func New(batchSize int) *Manager {
 	return &Manager{
 		tracks:              make(map[toppar.TopPart]*OffsetTrack, defaultTrackerSize),
-		mu:                  sync.Mutex{},
 		committableMessages: make(map[toppar.TopPart]TrackProgress, defaultTrackerSize),
+		mu:                  sync.Mutex{},
+		tpool:               NewTrackPool(batchSize),
 	}
 }
 
@@ -34,7 +36,9 @@ func (m *Manager) LoadPartitions(parts map[toppar.TopPart][]*kafka.Message) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for tp, messages := range parts {
-		m.tracks[tp] = NewTrack(messages)
+		track := m.tpool.Get()
+		track.Load(messages)
+		m.tracks[tp] = track
 	}
 }
 
@@ -90,6 +94,8 @@ func (m *Manager) ClearPartitions(topicParts []toppar.TopPart) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, tp := range topicParts {
+		track := m.tracks[tp]
+		m.tpool.Put(track)
 		delete(m.tracks, tp)
 		delete(m.committableMessages, tp)
 	}

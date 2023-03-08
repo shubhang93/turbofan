@@ -3,19 +3,21 @@ package offman
 import "sync"
 
 type TrackPool struct {
-	pool *sync.Pool
+	pool      sync.Pool
+	batchSize int
 }
 
 func NewTrackPool(batchSize int) *TrackPool {
-	pool := sync.Pool{
-		New: func() any {
-			return &OffsetTrack{
-				messages: make(map[int64]*MessageContainer, batchSize),
-				order:    make([]int64, batchSize),
-			}
+	return &TrackPool{
+		pool: sync.Pool{
+			New: func() any {
+				return &OffsetTrack{
+					messages: make(map[int64]*MessageContainer, batchSize),
+				}
+			},
 		},
+		batchSize: batchSize,
 	}
-	return &TrackPool{pool: &pool}
 }
 
 func (tp *TrackPool) Get() *OffsetTrack {
