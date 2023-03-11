@@ -237,7 +237,6 @@ func (omc *OffsetManagedConsumer) ACK(m *kafka.Message) error {
 	ktp := m.TopicPartition
 	tp := toppar.KafkaTopicPartToTopicPart(ktp)
 	return omc.offMan.Ack(tp, int64(ktp.Offset))
-
 }
 
 func (omc *OffsetManagedConsumer) handleRecords(ctx context.Context, messages []*kafka.Message) {
@@ -249,7 +248,7 @@ func (omc *OffsetManagedConsumer) handleRecords(ctx context.Context, messages []
 		case <-done:
 			return
 		case omc.sendChan <- messages:
-			debug.Log("[consumer send]: sent %d messages on in-channel\n", len(messages))
+			debug.Log("[consumer send]: sent %d messages on out-channel\n", len(messages))
 		}
 	}()
 }
