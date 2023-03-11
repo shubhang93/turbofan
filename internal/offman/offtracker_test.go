@@ -25,6 +25,10 @@ func TestCommittableMessageACK(t *testing.T) {
 			Name:      "Messages are less than the batch size",
 			BatchSize: 10,
 		},
+		{
+			Name:      "Messages are more than the batch size",
+			BatchSize: 2,
+		},
 	}
 
 	for _, test := range tests {
@@ -105,4 +109,19 @@ func TestOffsetTrack_Reset(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("want %+v\n got %+v\n", want, got)
 	}
+}
+
+func TestOffsetTrack_SingleMessage(t *testing.T) {
+	tpool := NewTrackPool(1).Get()
+	tpool.Load([]*kafka.Message{{
+		TopicPartition: kafka.TopicPartition{Offset: 100, Topic: toPtrStr("foo"), Partition: 1},
+	}})
+	_ = tpool.UpdateStatus(100, StatusAck)
+	msg, ok := tpool.CommittableMessage()
+	if !ok {
+		t.Errorf("expected a message")
+		return
+	}
+	t.Logf("{COMMITTABLE_OFFSET=%d}", msg.TopicPartition.Offset)
+
 }
