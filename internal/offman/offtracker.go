@@ -25,7 +25,6 @@ func (t *OffsetTrack) Load(msgs []*kafka.Message) {
 
 	for _, msg := range msgs {
 		offset := int64(msg.TopicPartition.Offset)
-		//t.order[i] = offset
 		t.messages[offset] = &MessageContainer{Message: msg}
 	}
 }
