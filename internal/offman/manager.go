@@ -95,6 +95,9 @@ func (m *Manager) ClearPartitions(topicParts []toppar.TopPart) {
 	defer m.mu.Unlock()
 	for _, tp := range topicParts {
 		track := m.tracks[tp]
+		if track == nil {
+			continue
+		}
 		m.tpool.Put(track)
 		delete(m.tracks, tp)
 		delete(m.committableMessages, tp)
