@@ -47,7 +47,7 @@ func (m *Manager) Ack(tp toppar.TopPart, offset int64) error {
 	defer m.mu.Unlock()
 	if offsetTrack, ok := m.tracks[tp]; ok {
 		if err := offsetTrack.UpdateStatus(offset, StatusAck); err != nil {
-			return fmt.Errorf("%s:%v", tp, err)
+			return fmt.Errorf("ACK error:%s:%v", tp, err)
 		}
 	}
 	return nil
